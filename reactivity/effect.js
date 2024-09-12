@@ -19,7 +19,11 @@ export function effect(fn, options = {}) {
   }
   effectFn.deps = []
   effectFn.options = options
-  effectFn()
+  if (!options.lazy) {
+    effectFn()
+  }
+  // 将effectFn返回由外部手动执行
+  return effectFn
 }
 
 const bucket = new WeakMap()
