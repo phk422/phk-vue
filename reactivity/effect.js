@@ -13,12 +13,14 @@ export function effect(fn, options = {}) {
     cleanup(effectFn)
     activeEffect = effectFn
     effectStack.push(effectFn)
-    fn()
+    const res = fn()
     effectStack.pop()
     activeEffect = effectStack[effectStack.length - 1]
+    return res
   }
   effectFn.deps = []
   effectFn.options = options
+  effectFn.fn = fn // 记录下原始方法，方便调试
   if (!options.lazy) {
     effectFn()
   }

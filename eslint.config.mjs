@@ -9,5 +9,6 @@ export default antfu({
   rules: {
     'no-console': 'off',
     'import/no-mutable-exports': 'off',
+    'no-use-before-define': 'off',
   },
 })
