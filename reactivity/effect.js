@@ -5,14 +5,28 @@ export function effect(fn) {
   activeEffect = null
 }
 
-const bucket = new Set()
+const bucket = new WeakMap()
 
-export function track() {
+export function track(target, key) {
   if (!activeEffect)
     return
-  bucket.add(activeEffect)
+  let depsMap = bucket.get(target)
+  if (!depsMap) {
+    bucket.set(target, depsMap = new Map())
+  }
+  let deps = depsMap.get(key)
+  if (!deps) {
+    depsMap.set(key, deps = new Set())
+  }
+  deps.add(activeEffect)
 }
 
-export function trigger() {
-  bucket.forEach(fn => fn())
+export function trigger(target, key) {
+  const depsMap = bucket.get(target)
+  if (depsMap) {
+    const deps = depsMap.get(key)
+    if (deps) {
+      deps.forEach(effectFn => effectFn())
+    }
+  }
 }
