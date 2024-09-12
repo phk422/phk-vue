@@ -1,5 +1,5 @@
 export let activeEffect = null
-
+const effectStack = []
 function cleanup(effectFn) {
   for (let i = 0; i < effectFn.deps.length; i++) {
     const deps = effectFn.deps[i]
@@ -12,8 +12,10 @@ export function effect(fn) {
   const effectFn = () => {
     cleanup(effectFn)
     activeEffect = effectFn
+    effectStack.push(effectFn)
     fn()
-    activeEffect = null
+    effectStack.pop()
+    activeEffect = effectStack[effectStack.length - 1]
   }
   effectFn.deps = []
   effectFn()
