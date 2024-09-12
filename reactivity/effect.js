@@ -1,8 +1,22 @@
 export let activeEffect = null
+
+function cleanup(effectFn) {
+  for (let i = 0; i < effectFn.deps.length; i++) {
+    const deps = effectFn.deps[i]
+    deps.delete(effectFn)
+  }
+  effectFn.deps.length = 0
+}
+
 export function effect(fn) {
-  activeEffect = fn
-  fn()
-  activeEffect = null
+  const effectFn = () => {
+    cleanup(effectFn)
+    activeEffect = effectFn
+    fn()
+    activeEffect = null
+  }
+  effectFn.deps = []
+  effectFn()
 }
 
 const bucket = new WeakMap()
@@ -19,14 +33,16 @@ export function track(target, key) {
     depsMap.set(key, deps = new Set())
   }
   deps.add(activeEffect)
+  activeEffect.deps.push(deps)
 }
 
 export function trigger(target, key) {
   const depsMap = bucket.get(target)
   if (depsMap) {
-    const deps = depsMap.get(key)
-    if (deps) {
-      deps.forEach(effectFn => effectFn())
+    const effects = depsMap.get(key)
+    if (effects) {
+      const effectsToRun = new Set(effects)
+      effectsToRun.forEach(effectFn => effectFn())
     }
   }
 }
