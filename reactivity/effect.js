@@ -44,7 +44,10 @@ export function trigger(target, key) {
     const effects = depsMap.get(key)
     if (effects) {
       const effectsToRun = new Set(effects)
-      effectsToRun.forEach(effectFn => effectFn())
+      effectsToRun.forEach((effectFn) => {
+        if (effectFn !== activeEffect)
+          effectFn()
+      })
     }
   }
 }
