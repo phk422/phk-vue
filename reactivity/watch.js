@@ -13,7 +13,7 @@ function traverse(value, seen = new Set()) {
   return value
 }
 
-export function watch(source, cb, { immediate = false, flush }) {
+export function watch(source, cb, { immediate = false, flush } = {}) {
   let getter
   if (typeof source === 'function') {
     getter = source
