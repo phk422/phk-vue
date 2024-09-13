@@ -1,4 +1,5 @@
 import { effect } from './effect.js'
+import { flushJob, jobQueue } from './scheduler.js'
 
 // 对对象的每个属性都读取，触发依赖的收集
 function traverse(value, seen = new Set()) {
@@ -12,7 +13,7 @@ function traverse(value, seen = new Set()) {
   return value
 }
 
-export function watch(source, cb, { immediate = false }) {
+export function watch(source, cb, { immediate = false, flush }) {
   let getter
   if (typeof source === 'function') {
     getter = source
@@ -28,7 +29,16 @@ export function watch(source, cb, { immediate = false }) {
   }
   const effectFn = effect(getter, {
     lazy: true,
-    scheduler: job,
+    scheduler: () => {
+      if (flush === 'post') {
+        jobQueue.add(job)
+        flushJob()
+      }
+      else {
+        // sync
+        job()
+      }
+    },
   })
   if (immediate) {
     job()
