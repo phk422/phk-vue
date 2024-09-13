@@ -22,9 +22,15 @@ export function watch(source, cb, { immediate = false, flush } = {}) {
     getter = () => traverse(source)
   }
   let oldValue
+  let clean
+
+  const onCleanup = (fn) => {
+    clean = fn
+  }
   const job = () => {
+    clean && clean()
     const newVal = effectFn()
-    cb(newVal, oldValue)
+    cb(newVal, oldValue, onCleanup)
     oldValue = newVal
   }
   const effectFn = effect(getter, {
