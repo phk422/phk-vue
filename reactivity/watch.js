@@ -12,7 +12,7 @@ function traverse(value, seen = new Set()) {
   return value
 }
 
-export function watch(source, cb) {
+export function watch(source, cb, { immediate = false }) {
   let getter
   if (typeof source === 'function') {
     getter = source
@@ -21,13 +21,19 @@ export function watch(source, cb) {
     getter = () => traverse(source)
   }
   let oldValue
+  const job = () => {
+    const newVal = effectFn()
+    cb(newVal, oldValue)
+    oldValue = newVal
+  }
   const effectFn = effect(getter, {
     lazy: true,
-    scheduler: () => {
-      const newVal = effectFn()
-      cb(newVal, oldValue)
-      oldValue = newVal
-    },
+    scheduler: job,
   })
-  oldValue = effectFn()
+  if (immediate) {
+    job()
+  }
+  else {
+    oldValue = effectFn()
+  }
 }
