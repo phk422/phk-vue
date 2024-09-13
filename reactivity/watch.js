@@ -20,10 +20,14 @@ export function watch(source, cb) {
   else {
     getter = () => traverse(source)
   }
+  let oldValue
   const effectFn = effect(getter, {
+    lazy: true,
     scheduler: () => {
       const newVal = effectFn()
-      cb(newVal)
+      cb(newVal, oldValue)
+      oldValue = newVal
     },
   })
+  oldValue = effectFn()
 }
