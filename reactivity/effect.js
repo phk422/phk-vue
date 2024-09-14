@@ -1,4 +1,4 @@
-import { ITERATE_KEY } from './constants.js'
+import { ITERATE_KEY, TriggerType } from './constants.js'
 
 export let activeEffect = null
 const effectStack = []
@@ -47,7 +47,7 @@ export function track(target, key) {
   activeEffect.deps.push(deps)
 }
 
-export function trigger(target, key) {
+export function trigger(target, key, type) {
   const depsMap = bucket.get(target)
   if (!depsMap)
     return
@@ -56,10 +56,12 @@ export function trigger(target, key) {
   effects && effects.forEach((effectFn) => {
     effectsToRun.add(effectFn)
   })
-  const iterateEffects = depsMap.get(ITERATE_KEY)
-  iterateEffects && iterateEffects.forEach((effectFn) => {
-    effectsToRun.add(effectFn)
-  })
+  if (type === TriggerType.ADD || type === TriggerType.DELETE) {
+    const iterateEffects = depsMap.get(ITERATE_KEY)
+    iterateEffects && iterateEffects.forEach((effectFn) => {
+      effectsToRun.add(effectFn)
+    })
+  }
   effectsToRun.forEach((effectFn) => {
     if (effectFn !== activeEffect) {
       if (effectFn.options.scheduler) {
