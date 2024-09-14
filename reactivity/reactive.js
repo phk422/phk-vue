@@ -11,5 +11,9 @@ export function reactive(target) {
       trigger(target, key)
       return res
     },
+    has(target, key) {
+      track(target, key)
+      return Reflect.has(target, key)
+    },
   })
 }
