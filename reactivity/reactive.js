@@ -1,3 +1,4 @@
+import { ITERATE_KEY } from './constants.js'
 import { track, trigger } from './effect.js'
 
 export function reactive(target) {
@@ -14,6 +15,10 @@ export function reactive(target) {
     has(target, key) {
       track(target, key)
       return Reflect.has(target, key)
+    },
+    ownKeys(target) {
+      track(target, ITERATE_KEY)
+      return Reflect.ownKeys(target)
     },
   })
 }

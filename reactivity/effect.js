@@ -1,3 +1,5 @@
+import { ITERATE_KEY } from './constants.js'
+
 export let activeEffect = null
 const effectStack = []
 function cleanup(effectFn) {
@@ -47,20 +49,25 @@ export function track(target, key) {
 
 export function trigger(target, key) {
   const depsMap = bucket.get(target)
-  if (depsMap) {
-    const effects = depsMap.get(key)
-    if (effects) {
-      const effectsToRun = new Set(effects)
-      effectsToRun.forEach((effectFn) => {
-        if (effectFn !== activeEffect) {
-          if (effectFn.options.scheduler) {
-            effectFn.options.scheduler(effectFn)
-          }
-          else {
-            effectFn()
-          }
-        }
-      })
+  if (!depsMap)
+    return
+  const effectsToRun = new Set()
+  const effects = depsMap.get(key)
+  effects && effects.forEach((effectFn) => {
+    effectsToRun.add(effectFn)
+  })
+  const iterateEffects = depsMap.get(ITERATE_KEY)
+  iterateEffects && iterateEffects.forEach((effectFn) => {
+    effectsToRun.add(effectFn)
+  })
+  effectsToRun.forEach((effectFn) => {
+    if (effectFn !== activeEffect) {
+      if (effectFn.options.scheduler) {
+        effectFn.options.scheduler(effectFn)
+      }
+      else {
+        effectFn()
+      }
     }
-  }
+  })
 }
