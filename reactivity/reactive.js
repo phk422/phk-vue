@@ -37,7 +37,11 @@ function createReactive(target, isShallow = false, isReadonly = false) {
         return true
       }
       const oldValue = target[key]
-      const type = hasOwn(target, key) ? TriggerType.SET : TriggerType.ADD
+
+      const type = Array.isArray(target)
+        ? (Number(key) < target.length ? TriggerType.SET : TriggerType.ADD)
+        : (hasOwn(target, key) ? TriggerType.SET : TriggerType.ADD)
+
       const res = Reflect.set(target, key, newVal, receiver)
       // 只有当 receiver是 target 的代理对象时才触发更新, 解决原型链的问题
       if (target === receiver.raw && hasChanged(newVal, oldValue)) {

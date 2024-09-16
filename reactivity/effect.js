@@ -62,6 +62,12 @@ export function trigger(target, key, type) {
       effectsToRun.add(effectFn)
     })
   }
+  if (type === TriggerType.ADD && Array.isArray(target)) {
+    const lengthEffects = depsMap.get('length')
+    lengthEffects && lengthEffects.forEach((effectFn) => {
+      effectsToRun.add(effectFn)
+    })
+  }
   effectsToRun.forEach((effectFn) => {
     if (effectFn !== activeEffect) {
       if (effectFn.options.scheduler) {
