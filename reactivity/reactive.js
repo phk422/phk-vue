@@ -9,9 +9,12 @@ export function reactive(target) {
       return Reflect.get(target, key, receiver)
     },
     set(target, key, newVal, receiver) {
+      const oldValue = target[key]
       const type = hasOwn(target, key) ? TriggerType.SET : TriggerType.ADD
       const res = Reflect.set(target, key, newVal, receiver)
-      trigger(target, key, type)
+      if (oldValue !== newVal) {
+        trigger(target, key, type)
+      }
       return res
     },
     has(target, key) {
@@ -29,6 +32,6 @@ export function reactive(target) {
         trigger(target, key, TriggerType.DELETE)
       }
       return res
-    }
+    },
   })
 }
