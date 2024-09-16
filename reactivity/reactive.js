@@ -3,13 +3,25 @@ import { track, trigger } from './effect.js'
 import { hasChanged, hasOwn } from './utils.js'
 
 export function reactive(target) {
+  return createReactive(target, false)
+}
+
+export function shallowReactive(target) {
+  return createReactive(target, true)
+}
+
+function createReactive(target, isShallow = false) {
   return new Proxy(target, {
     get(target, key, receiver) {
       if (key === 'raw') {
         return target
       }
       track(target, key)
-      return Reflect.get(target, key, receiver)
+      const value = Reflect.get(target, key, receiver)
+      if (!isShallow && typeof value === 'object' && value !== null) {
+        return reactive(value)
+      }
+      return value
     },
     set(target, key, newVal, receiver) {
       const oldValue = target[key]
