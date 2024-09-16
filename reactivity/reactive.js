@@ -10,7 +10,15 @@ export function shallowReactive(target) {
   return createReactive(target, true)
 }
 
-function createReactive(target, isShallow = false) {
+export function readonly(target) {
+  return createReactive(target, false, true)
+}
+
+export function shallowReadonly(target) {
+  return createReactive(target, true, true)
+}
+
+function createReactive(target, isShallow = false, isReadonly = false) {
   return new Proxy(target, {
     get(target, key, receiver) {
       if (key === 'raw') {
@@ -19,11 +27,15 @@ function createReactive(target, isShallow = false) {
       track(target, key)
       const value = Reflect.get(target, key, receiver)
       if (!isShallow && typeof value === 'object' && value !== null) {
-        return reactive(value)
+        return isReadonly ? readonly(target) : reactive(target)
       }
       return value
     },
     set(target, key, newVal, receiver) {
+      if (isReadonly) {
+        console.warn(`'${key}' is readonly`)
+        return true
+      }
       const oldValue = target[key]
       const type = hasOwn(target, key) ? TriggerType.SET : TriggerType.ADD
       const res = Reflect.set(target, key, newVal, receiver)
@@ -42,6 +54,10 @@ function createReactive(target, isShallow = false) {
       return Reflect.ownKeys(target)
     },
     deleteProperty(target, key) {
+      if (isReadonly) {
+        console.warn(`'${key}' is readonly`)
+        return true
+      }
       const hadKey = hasOwn(target, key)
       const res = Reflect.deleteProperty(target, key)
       if (hadKey && res) {
