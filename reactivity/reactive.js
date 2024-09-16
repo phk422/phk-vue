@@ -5,6 +5,9 @@ import { hasChanged, hasOwn } from './utils.js'
 export function reactive(target) {
   return new Proxy(target, {
     get(target, key, receiver) {
+      if (key === 'raw') {
+        return target
+      }
       track(target, key)
       return Reflect.get(target, key, receiver)
     },
@@ -12,7 +15,8 @@ export function reactive(target) {
       const oldValue = target[key]
       const type = hasOwn(target, key) ? TriggerType.SET : TriggerType.ADD
       const res = Reflect.set(target, key, newVal, receiver)
-      if (hasChanged(newVal, oldValue)) {
+      // 只有当 receiver是 target 的代理对象时才触发更新, 解决原型链的问题
+      if (target === receiver.raw && hasChanged(newVal, oldValue)) {
         trigger(target, key, type)
       }
       return res
