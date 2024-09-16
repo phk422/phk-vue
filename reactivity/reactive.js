@@ -1,6 +1,6 @@
 import { ITERATE_KEY, TriggerType } from './constants.js'
 import { track, trigger } from './effect.js'
-import { hasOwn } from './utils.js'
+import { hasChanged, hasOwn } from './utils.js'
 
 export function reactive(target) {
   return new Proxy(target, {
@@ -12,7 +12,7 @@ export function reactive(target) {
       const oldValue = target[key]
       const type = hasOwn(target, key) ? TriggerType.SET : TriggerType.ADD
       const res = Reflect.set(target, key, newVal, receiver)
-      if (oldValue !== newVal) {
+      if (hasChanged(newVal, oldValue)) {
         trigger(target, key, type)
       }
       return res
