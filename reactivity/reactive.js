@@ -45,7 +45,7 @@ function createReactive(target, isShallow = false, isReadonly = false) {
       const res = Reflect.set(target, key, newVal, receiver)
       // 只有当 receiver是 target 的代理对象时才触发更新, 解决原型链的问题
       if (target === receiver.raw && hasChanged(newVal, oldValue)) {
-        trigger(target, key, type)
+        trigger(target, key, type, newVal)
       }
       return res
     },

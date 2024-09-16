@@ -47,7 +47,7 @@ export function track(target, key) {
   activeEffect.deps.push(deps)
 }
 
-export function trigger(target, key, type) {
+export function trigger(target, key, type, newVal) {
   const depsMap = bucket.get(target)
   if (!depsMap)
     return
@@ -56,6 +56,17 @@ export function trigger(target, key, type) {
   effects && effects.forEach((effectFn) => {
     effectsToRun.add(effectFn)
   })
+
+  // 如果当前设置的是数组的length, 需要判断索引的改变
+  if (key === 'length' && Array.isArray(target)) {
+    depsMap.forEach((effects, key) => {
+      if (key >= newVal) {
+        effects.forEach((effectFn) => {
+          effectsToRun.add(effectFn)
+        })
+      }
+    })
+  }
   if (type === TriggerType.ADD || type === TriggerType.DELETE) {
     const iterateEffects = depsMap.get(ITERATE_KEY)
     iterateEffects && iterateEffects.forEach((effectFn) => {
