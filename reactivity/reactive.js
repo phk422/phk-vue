@@ -24,7 +24,9 @@ function createReactive(target, isShallow = false, isReadonly = false) {
       if (key === 'raw') {
         return target
       }
-      track(target, key)
+      if (typeof key !== 'symbol') {
+        track(target, key)
+      }
       const value = Reflect.get(target, key, receiver)
       if (!isShallow && typeof value === 'object' && value !== null) {
         return isReadonly ? readonly(target) : reactive(target)
