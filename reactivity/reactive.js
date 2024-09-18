@@ -54,7 +54,7 @@ function createReactive(target, isShallow = false, isReadonly = false) {
       return Reflect.has(target, key)
     },
     ownKeys(target) {
-      track(target, ITERATE_KEY)
+      track(target, Array.isArray(target) ? 'length' : ITERATE_KEY)
       return Reflect.ownKeys(target)
     },
     deleteProperty(target, key) {
