@@ -2,8 +2,15 @@ import { ITERATE_KEY, TriggerType } from './constants.js'
 import { track, trigger } from './effect.js'
 import { hasChanged, hasOwn } from './utils.js'
 
+export const reactiveMap = new WeakMap()
+
 export function reactive(target) {
-  return createReactive(target, false)
+  const existProxy = reactiveMap.get(target)
+  if (existProxy)
+    return existProxy
+  const proxyObj = createReactive(target, false)
+  reactiveMap.set(target, proxyObj)
+  return proxyObj
 }
 
 export function shallowReactive(target) {
