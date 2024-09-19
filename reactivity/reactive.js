@@ -1,3 +1,4 @@
+import { arrayInstrumentations } from './arrayInstrumentations.js'
 import { ITERATE_KEY, TriggerType } from './constants.js'
 import { track, trigger } from './effect.js'
 import { hasChanged, hasOwn } from './utils.js'
@@ -30,6 +31,9 @@ function createReactive(target, isShallow = false, isReadonly = false) {
     get(target, key, receiver) {
       if (key === 'raw') {
         return target
+      }
+      if (Array.isArray(target) && hasOwn(arrayInstrumentations, key)) {
+        return Reflect.get(arrayInstrumentations, key, receiver) // 返回重写的方法
       }
       if (!isReadonly && typeof key !== 'symbol') {
         track(target, key)
