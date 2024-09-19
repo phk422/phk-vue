@@ -12,11 +12,19 @@ export const arrayInstrumentations = {
   },
 
   push(...args) {
-    const originMethod = Array.prototype.push
-    pauseTracking()
-    const res = originMethod.apply(this, args)
-    enableTracking()
-    return res
+    return noTracking(this, 'push', args)
+  },
+  pop() {
+    return noTracking(this, 'pop')
+  },
+  shift() {
+    return noTracking(this, 'shift')
+  },
+  unshift(...args) {
+    return noTracking(this, 'unshift', args)
+  },
+  splice(...args) {
+    return noTracking(this, 'splice', args)
   },
 }
 
@@ -28,5 +36,13 @@ function searchProxy(self, method, args) {
     // 没找到再在原始对象上寻找
     res = originIncludesMethod.apply(self.raw, args)
   }
+  return res
+}
+
+function noTracking(self, method, args) {
+  pauseTracking()
+  const originMethod = Array.prototype[method]
+  const res = originMethod.apply(self, args)
+  enableTracking()
   return res
 }
