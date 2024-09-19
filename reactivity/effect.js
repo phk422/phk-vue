@@ -1,7 +1,17 @@
 import { ITERATE_KEY, TriggerType } from './constants.js'
 
+export let shouldTrack = true
 export let activeEffect = null
 const effectStack = []
+
+export function pauseTracking() {
+  shouldTrack = false
+}
+
+export function enableTracking() {
+  shouldTrack = true
+}
+
 function cleanup(effectFn) {
   for (let i = 0; i < effectFn.deps.length; i++) {
     const deps = effectFn.deps[i]
@@ -33,7 +43,7 @@ export function effect(fn, options = {}) {
 const bucket = new WeakMap()
 
 export function track(target, key) {
-  if (!activeEffect)
+  if (!activeEffect || !shouldTrack)
     return
   let depsMap = bucket.get(target)
   if (!depsMap) {

@@ -1,3 +1,5 @@
+import { enableTracking, pauseTracking } from './effect.js'
+
 export const arrayInstrumentations = {
   includes(...args) {
     return searchProxy(this, 'includes', args)
@@ -7,6 +9,14 @@ export const arrayInstrumentations = {
   },
   lastIndexOf(...args) {
     return searchProxy(this, 'lastIndexOf', args)
+  },
+
+  push(...args) {
+    const originMethod = Array.prototype.push
+    pauseTracking()
+    const res = originMethod.apply(this, args)
+    enableTracking()
+    return res
   },
 }
 
