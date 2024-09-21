@@ -1,7 +1,7 @@
 import { arrayInstrumentations } from './arrayInstrumentations.js'
 import { ITERATE_KEY, TriggerType } from './constants.js'
 import { track, trigger } from './effect.js'
-import { hasChanged, hasOwn } from './utils.js'
+import { hasChanged, hasOwn, isObject } from './utils.js'
 
 export const reactiveMap = new WeakMap()
 
@@ -45,6 +45,28 @@ const mutableInstrumentations = {
     }
     return result
   },
+  get(key) {
+    const target = this.raw
+    const hadKey = target.has(key)
+    track(target, key)
+    if (hadKey) {
+      const res = target.get(key)
+      return isObject(res) ? reactive(res) : res
+    }
+  },
+  set(key, value) {
+    const target = this.raw
+    const hadKey = target.has(key)
+    const oldValue = target.get(key)
+    target.set(key, value)
+    if (!hadKey) {
+      trigger(target, key, TriggerType.ADD)
+    }
+    else if (hasChanged(value, oldValue)) {
+      trigger(target, key, TriggerType.SET)
+    }
+    return this
+  },
 }
 
 function createMutableHandlers(isShallow = false, isReadonly = false) {
@@ -83,7 +105,7 @@ function createMutableCollectionHandlers() {
 }
 
 function createReactive(target, isShallow = false, isReadonly = false) {
-  const handles = target instanceof Set
+  const handles = (target instanceof Set || target instanceof Map)
     ? createMutableCollectionHandlers()
     : createMutableHandlers(isShallow, isReadonly)
   return new Proxy(target, {
