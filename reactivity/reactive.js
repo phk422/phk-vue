@@ -58,7 +58,7 @@ function createMutableCollectionHandlers(isShallow = false, isReadonly = false) 
       if (!isReadonly && typeof key !== 'symbol') {
         track(target, key)
       }
-      const value = Reflect.get(target, key, receiver)
+      const value = Reflect.get(target, key, key === 'size' ? target : receiver)
       if (!isShallow && typeof value === 'object' && value !== null) {
         return isReadonly ? readonly(value) : reactive(value)
       }
@@ -69,8 +69,8 @@ function createMutableCollectionHandlers(isShallow = false, isReadonly = false) 
 
 function createReactive(target, isShallow = false, isReadonly = false) {
   const handles = target instanceof Set
-    ? createMutableHandlers(isShallow, isReadonly)
-    : createMutableCollectionHandlers(isShallow, isReadonly)
+    ? createMutableCollectionHandlers(isShallow, isReadonly)
+    : createMutableHandlers(isShallow, isReadonly)
   return new Proxy(target, {
     ...handles,
     set(target, key, newVal, receiver) {
