@@ -26,6 +26,19 @@ export function shallowReadonly(target) {
   return createReactive(target, true, true)
 }
 
+const mutableInstrumentations = {
+  add(key) {
+    const target = this.raw // 这里的this指向代理对象
+    const hadKey = target.has(key)
+    const result = target.add(key)
+    // 优化：如果已经存在了就u需要触发副作用的执行了
+    if (!hadKey) {
+      trigger(target, key, TriggerType.ADD)
+    }
+    return result
+  },
+}
+
 function createMutableHandlers(isShallow = false, isReadonly = false) {
   return {
     get(target, key, receiver) {
@@ -48,15 +61,15 @@ function createMutableHandlers(isShallow = false, isReadonly = false) {
 }
 function createMutableCollectionHandlers() {
   return {
-    get(target, key, receiver) {
+    get(target, key) {
       if (key === 'raw') {
         return target
       }
       if (key === 'size') {
+        track(target, ITERATE_KEY)
         return Reflect.get(target, key, target)
       }
-      const value = Reflect.get(target, key, receiver)
-      return value.bind(target)
+      return mutableInstrumentations[key]
     },
   }
 }
