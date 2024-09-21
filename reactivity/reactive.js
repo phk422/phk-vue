@@ -37,6 +37,14 @@ const mutableInstrumentations = {
     }
     return result
   },
+  delete(key) {
+    const target = this.raw
+    const result = target.delete(key)
+    if (result) {
+      trigger(target, key, TriggerType.DELETE)
+    }
+    return result
+  },
 }
 
 function createMutableHandlers(isShallow = false, isReadonly = false) {
