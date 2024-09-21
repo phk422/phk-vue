@@ -46,30 +46,24 @@ function createMutableHandlers(isShallow = false, isReadonly = false) {
     },
   }
 }
-function createMutableCollectionHandlers(isShallow = false, isReadonly = false) {
+function createMutableCollectionHandlers() {
   return {
     get(target, key, receiver) {
       if (key === 'raw') {
         return target
       }
-      if (Array.isArray(target) && hasOwn(arrayInstrumentations, key)) {
-        return Reflect.get(arrayInstrumentations, key, receiver) // 返回重写的方法
+      if (key === 'size') {
+        return Reflect.get(target, key, target)
       }
-      if (!isReadonly && typeof key !== 'symbol') {
-        track(target, key)
-      }
-      const value = Reflect.get(target, key, key === 'size' ? target : receiver)
-      if (!isShallow && typeof value === 'object' && value !== null) {
-        return isReadonly ? readonly(value) : reactive(value)
-      }
-      return value
+      const value = Reflect.get(target, key, receiver)
+      return value.bind(target)
     },
   }
 }
 
 function createReactive(target, isShallow = false, isReadonly = false) {
   const handles = target instanceof Set
-    ? createMutableCollectionHandlers(isShallow, isReadonly)
+    ? createMutableCollectionHandlers()
     : createMutableHandlers(isShallow, isReadonly)
   return new Proxy(target, {
     ...handles,
