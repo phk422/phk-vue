@@ -26,8 +26,8 @@ export function shallowReadonly(target) {
   return createReactive(target, true, true)
 }
 
-function createReactive(target, isShallow = false, isReadonly = false) {
-  return new Proxy(target, {
+function createMutableHandlers(isShallow = false, isReadonly = false) {
+  return {
     get(target, key, receiver) {
       if (key === 'raw') {
         return target
@@ -44,6 +44,35 @@ function createReactive(target, isShallow = false, isReadonly = false) {
       }
       return value
     },
+  }
+}
+function createMutableCollectionHandlers(isShallow = false, isReadonly = false) {
+  return {
+    get(target, key, receiver) {
+      if (key === 'raw') {
+        return target
+      }
+      if (Array.isArray(target) && hasOwn(arrayInstrumentations, key)) {
+        return Reflect.get(arrayInstrumentations, key, receiver) // 返回重写的方法
+      }
+      if (!isReadonly && typeof key !== 'symbol') {
+        track(target, key)
+      }
+      const value = Reflect.get(target, key, receiver)
+      if (!isShallow && typeof value === 'object' && value !== null) {
+        return isReadonly ? readonly(value) : reactive(value)
+      }
+      return value
+    },
+  }
+}
+
+function createReactive(target, isShallow = false, isReadonly = false) {
+  const handles = target instanceof Set
+    ? createMutableHandlers(isShallow, isReadonly)
+    : createMutableCollectionHandlers(isShallow, isReadonly)
+  return new Proxy(target, {
+    ...handles,
     set(target, key, newVal, receiver) {
       if (isReadonly) {
         console.warn(`'${key}' is readonly`)
