@@ -76,7 +76,9 @@ function createMutableInstrumentations(isShallow = false, isReadonly = false) {
       const target = this.raw
       const hadKey = target.has(key)
       const oldValue = target.get(key)
-      target.set(key, value)
+      // 不能把响应式数据设置到原始数据上，会造成数据污染
+      const rawValue = value.raw || value
+      target.set(key, rawValue)
       if (!hadKey) {
         trigger(target, key, TriggerType.ADD)
       }
