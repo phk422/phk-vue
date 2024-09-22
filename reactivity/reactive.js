@@ -87,6 +87,11 @@ function createMutableInstrumentations(isShallow = false, isReadonly = false) {
       }
       return this
     },
+    forEach(callback) {
+      const target = this.raw
+      track(target, ITERATE_KEY)
+      target.forEach(callback)
+    },
   }
 }
 
