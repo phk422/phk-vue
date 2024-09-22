@@ -27,7 +27,24 @@ export function shallowReadonly(target) {
 }
 
 function createMutableInstrumentations(isShallow = false, isReadonly = false) {
+  const wrap = value => !isShallow && isObject(value) ? reactive(value) : value
   return {
+    [Symbol.iterator]() {
+      const target = this.raw
+      const itr = target[Symbol.iterator]()
+      if (!isReadonly) {
+        track(target, ITERATE_KEY)
+      }
+      return {
+        next() {
+          const { done, value } = itr.next()
+          return {
+            value: value ? [wrap(value[0]), wrap(value[1])] : value,
+            done,
+          }
+        },
+      }
+    },
     add(key) {
       if (isReadonly) {
         console.warn(`'${key}' is readonly`)
@@ -88,7 +105,6 @@ function createMutableInstrumentations(isShallow = false, isReadonly = false) {
       return this
     },
     forEach(callback, thisArg) {
-      const wrap = value => !isShallow && isObject(value) ? reactive(value) : value
       const target = this.raw
       track(target, ITERATE_KEY)
       target.forEach((value, key) => {
