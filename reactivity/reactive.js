@@ -87,12 +87,12 @@ function createMutableInstrumentations(isShallow = false, isReadonly = false) {
       }
       return this
     },
-    forEach(callback) {
+    forEach(callback, thisArg) {
       const wrap = value => !isShallow && isObject(value) ? reactive(value) : value
       const target = this.raw
       track(target, ITERATE_KEY)
       target.forEach((value, key) => {
-        callback(wrap(value), wrap(key), this)
+        callback.call(thisArg, wrap(value), wrap(key), this)
       })
     },
   }
