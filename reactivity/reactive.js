@@ -26,47 +26,66 @@ export function shallowReadonly(target) {
   return createReactive(target, true, true)
 }
 
-const mutableInstrumentations = {
-  add(key) {
-    const target = this.raw // 这里的this指向代理对象
-    const hadKey = target.has(key)
-    const result = target.add(key)
-    // 优化：如果已经存在了就u需要触发副作用的执行了
-    if (!hadKey) {
-      trigger(target, key, TriggerType.ADD)
-    }
-    return result
-  },
-  delete(key) {
-    const target = this.raw
-    const result = target.delete(key)
-    if (result) {
-      trigger(target, key, TriggerType.DELETE)
-    }
-    return result
-  },
-  get(key) {
-    const target = this.raw
-    const hadKey = target.has(key)
-    track(target, key)
-    if (hadKey) {
-      const res = target.get(key)
-      return isObject(res) ? reactive(res) : res
-    }
-  },
-  set(key, value) {
-    const target = this.raw
-    const hadKey = target.has(key)
-    const oldValue = target.get(key)
-    target.set(key, value)
-    if (!hadKey) {
-      trigger(target, key, TriggerType.ADD)
-    }
-    else if (hasChanged(value, oldValue)) {
-      trigger(target, key, TriggerType.SET)
-    }
-    return this
-  },
+function createMutableInstrumentations(isShallow = false, isReadonly = false) {
+  return {
+    add(key) {
+      if (isReadonly) {
+        console.warn(`'${key}' is readonly`)
+        return true
+      }
+      const target = this.raw // 这里的this指向代理对象
+      const hadKey = target.has(key)
+      const result = target.add(key)
+      // 优化：如果已经存在了就u需要触发副作用的执行了
+      if (!hadKey) {
+        trigger(target, key, TriggerType.ADD)
+      }
+      return result
+    },
+    delete(key) {
+      if (isReadonly) {
+        console.warn(`'${key}' is readonly`)
+        return true
+      }
+      const target = this.raw
+      const result = target.delete(key)
+      if (result) {
+        trigger(target, key, TriggerType.DELETE)
+      }
+      return result
+    },
+    get(key) {
+      const target = this.raw
+      const hadKey = target.has(key)
+      if (!isReadonly) {
+        track(target, key)
+      }
+      if (hadKey) {
+        const res = target.get(key)
+        if (!isShallow && isObject(res)) {
+          return isReadonly ? readonly(res) : reactive(res)
+        }
+        return res
+      }
+    },
+    set(key, value) {
+      if (isReadonly) {
+        console.warn(`'${key}' is readonly`)
+        return this
+      }
+      const target = this.raw
+      const hadKey = target.has(key)
+      const oldValue = target.get(key)
+      target.set(key, value)
+      if (!hadKey) {
+        trigger(target, key, TriggerType.ADD)
+      }
+      else if (hasChanged(value, oldValue)) {
+        trigger(target, key, TriggerType.SET)
+      }
+      return this
+    },
+  }
 }
 
 function createMutableHandlers(isShallow = false, isReadonly = false) {
@@ -89,7 +108,7 @@ function createMutableHandlers(isShallow = false, isReadonly = false) {
     },
   }
 }
-function createMutableCollectionHandlers() {
+function createMutableCollectionHandlers(isShallow = false, isReadonly = false) {
   return {
     get(target, key) {
       if (key === 'raw') {
@@ -99,14 +118,14 @@ function createMutableCollectionHandlers() {
         track(target, ITERATE_KEY)
         return Reflect.get(target, key, target)
       }
-      return mutableInstrumentations[key]
+      return createMutableInstrumentations(isShallow, isReadonly)[key]
     },
   }
 }
 
 function createReactive(target, isShallow = false, isReadonly = false) {
   const handles = (target instanceof Set || target instanceof Map)
-    ? createMutableCollectionHandlers()
+    ? createMutableCollectionHandlers(isShallow, isReadonly)
     : createMutableHandlers(isShallow, isReadonly)
   return new Proxy(target, {
     ...handles,
