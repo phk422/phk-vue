@@ -48,10 +48,32 @@ function createMutableInstrumentations(isShallow = false, isReadonly = false) {
       },
     }
   }
+  function valuesIteratorMethod() {
+    const target = this.raw
+    const itr = target.values()
+    if (!isReadonly) {
+      track(target, ITERATE_KEY)
+    }
+    return {
+      // 迭代器协议
+      next() {
+        const { done, value } = itr.next()
+        return {
+          value: wrap(value),
+          done,
+        }
+      },
+      // 可迭代协议
+      [Symbol.iterator]() {
+        return this
+      },
+    }
+  }
   const wrap = value => !isShallow && isObject(value) ? reactive(value) : value
   return {
     [Symbol.iterator]: iteratorMethod,
     entries: iteratorMethod,
+    values: valuesIteratorMethod,
     add(key) {
       if (isReadonly) {
         console.warn(`'${key}' is readonly`)
