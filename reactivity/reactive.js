@@ -27,24 +27,31 @@ export function shallowReadonly(target) {
 }
 
 function createMutableInstrumentations(isShallow = false, isReadonly = false) {
+  function iteratorMethod() {
+    const target = this.raw
+    const itr = target[Symbol.iterator]()
+    if (!isReadonly) {
+      track(target, ITERATE_KEY)
+    }
+    return {
+      // 迭代器协议
+      next() {
+        const { done, value } = itr.next()
+        return {
+          value: value ? [wrap(value[0]), wrap(value[1])] : value,
+          done,
+        }
+      },
+      // 可迭代协议
+      [Symbol.iterator]() {
+        return this
+      },
+    }
+  }
   const wrap = value => !isShallow && isObject(value) ? reactive(value) : value
   return {
-    [Symbol.iterator]() {
-      const target = this.raw
-      const itr = target[Symbol.iterator]()
-      if (!isReadonly) {
-        track(target, ITERATE_KEY)
-      }
-      return {
-        next() {
-          const { done, value } = itr.next()
-          return {
-            value: value ? [wrap(value[0]), wrap(value[1])] : value,
-            done,
-          }
-        },
-      }
-    },
+    [Symbol.iterator]: iteratorMethod,
+    entries: iteratorMethod,
     add(key) {
       if (isReadonly) {
         console.warn(`'${key}' is readonly`)
