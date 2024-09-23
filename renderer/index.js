@@ -18,6 +18,12 @@ export function createRenderer(options = rendererOptions) {
     if (typeof vnode.children === 'string') {
       setElementText(el, vnode.children)
     }
+    else if (Array.isArray(vnode.children)) {
+      // 遍历子节点并挂载子节点
+      vnode.children.forEach((child) => {
+        patch(null, child, el)
+      })
+    }
     insert(el, container)
   }
 
