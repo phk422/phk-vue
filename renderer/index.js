@@ -24,6 +24,14 @@ export function createRenderer(options = rendererOptions) {
         patch(null, child, el)
       })
     }
+
+    // 设置属性
+    if (vnode.props) {
+      for (const key in vnode.props) {
+        // el.setAttribute(key, vnode.props[key])
+        el[key] = vnode.props[key]
+      }
+    }
     insert(el, container)
   }
 
