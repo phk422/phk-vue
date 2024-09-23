@@ -10,3 +10,6 @@ effect(() => {
     console.log(key, val)
   }
 })
+
+console.log('---')
+map.set('key3', 3)

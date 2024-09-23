@@ -27,53 +27,37 @@ export function shallowReadonly(target) {
 }
 
 function createMutableInstrumentations(isShallow = false, isReadonly = false) {
-  function iteratorMethod() {
-    const target = this.raw
-    const itr = target[Symbol.iterator]()
-    if (!isReadonly) {
-      track(target, ITERATE_KEY)
-    }
-    return {
-      // 迭代器协议
-      next() {
-        const { done, value } = itr.next()
-        return {
-          value: value ? [wrap(value[0]), wrap(value[1])] : value,
-          done,
-        }
-      },
-      // 可迭代协议
-      [Symbol.iterator]() {
-        return this
-      },
-    }
-  }
-  function valuesIteratorMethod() {
-    const target = this.raw
-    const itr = target.values()
-    if (!isReadonly) {
-      track(target, ITERATE_KEY)
-    }
-    return {
-      // 迭代器协议
-      next() {
-        const { done, value } = itr.next()
-        return {
-          value: wrap(value),
-          done,
-        }
-      },
-      // 可迭代协议
-      [Symbol.iterator]() {
-        return this
-      },
+  function createIterableMethod(method) {
+    return function () {
+      const target = this.raw
+      const isPair = method === 'entries' || method === Symbol.iterator
+      const itr = target[method]()
+      if (!isReadonly) {
+        track(target, ITERATE_KEY)
+      }
+      return {
+        // 迭代器协议
+        next() {
+          const { done, value } = itr.next()
+          return {
+            value: isPair
+              ? (value ? [wrap(value[0]), wrap(value[1])] : value)
+              : wrap(value),
+            done,
+          }
+        },
+        // 可迭代协议
+        [Symbol.iterator]() {
+          return this
+        },
+      }
     }
   }
   const wrap = value => !isShallow && isObject(value) ? reactive(value) : value
   return {
-    [Symbol.iterator]: iteratorMethod,
-    entries: iteratorMethod,
-    values: valuesIteratorMethod,
+    [Symbol.iterator]: createIterableMethod(Symbol.iterator),
+    entries: createIterableMethod('entries'),
+    values: createIterableMethod('values'),
     add(key) {
       if (isReadonly) {
         console.warn(`'${key}' is readonly`)
