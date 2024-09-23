@@ -36,3 +36,20 @@ export function toRefs(obj) {
   }
   return result
 }
+
+export function proxyRefs(target) {
+  return new Proxy(target, {
+    get(target, key, receiver) {
+      const result = Reflect.get(target, key, receiver)
+      return result[ReactiveFlags.IS_REF] ? result.value : result
+    },
+    set(target, key, newValue, receiver) {
+      const value = target[key]
+      if (value[ReactiveFlags.IS_REF]) {
+        value.value = newValue
+        return true
+      }
+      return Reflect.set(target, key, newValue, receiver)
+    },
+  })
+}
