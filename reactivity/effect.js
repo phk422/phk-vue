@@ -1,4 +1,4 @@
-import { ITERATE_KEY, TriggerType } from './constants.js'
+import { ITERATE_KEY, MAP_KEY_ITERATE_KEY, TriggerType } from './constants.js'
 
 export let shouldTrack = true
 export let activeEffect = null
@@ -77,9 +77,16 @@ export function trigger(target, key, type, newVal) {
       }
     })
   }
+  const targetIsMap = target instanceof Map
   if (type === TriggerType.ADD || type === TriggerType.DELETE
-    || (type === TriggerType.SET && target instanceof Map)) {
+    || (type === TriggerType.SET && targetIsMap)) {
     const iterateEffects = depsMap.get(ITERATE_KEY)
+    iterateEffects && iterateEffects.forEach((effectFn) => {
+      effectsToRun.add(effectFn)
+    })
+  }
+  if ((type === TriggerType.ADD || type === TriggerType.DELETE) && targetIsMap) {
+    const iterateEffects = depsMap.get(MAP_KEY_ITERATE_KEY)
     iterateEffects && iterateEffects.forEach((effectFn) => {
       effectsToRun.add(effectFn)
     })

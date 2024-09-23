@@ -1,5 +1,5 @@
 import { arrayInstrumentations } from './arrayInstrumentations.js'
-import { ITERATE_KEY, TriggerType } from './constants.js'
+import { ITERATE_KEY,MAP_KEY_ITERATE_KEY, TriggerType } from './constants.js'
 import { track, trigger } from './effect.js'
 import { hasChanged, hasOwn, isObject } from './utils.js'
 
@@ -33,7 +33,8 @@ function createMutableInstrumentations(isShallow = false, isReadonly = false) {
       const isPair = method === 'entries' || method === Symbol.iterator
       const itr = target[method]()
       if (!isReadonly) {
-        track(target, ITERATE_KEY)
+        const isKeyOnly = method === 'keys'
+        track(target, isKeyOnly ? MAP_KEY_ITERATE_KEY : ITERATE_KEY)
       }
       return {
         // 迭代器协议
@@ -58,6 +59,7 @@ function createMutableInstrumentations(isShallow = false, isReadonly = false) {
     [Symbol.iterator]: createIterableMethod(Symbol.iterator),
     entries: createIterableMethod('entries'),
     values: createIterableMethod('values'),
+    keys: createIterableMethod('keys'),
     add(key) {
       if (isReadonly) {
         console.warn(`'${key}' is readonly`)
