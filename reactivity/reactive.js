@@ -1,5 +1,5 @@
 import { arrayInstrumentations } from './arrayInstrumentations.js'
-import { ITERATE_KEY,MAP_KEY_ITERATE_KEY, TriggerType } from './constants.js'
+import { ITERATE_KEY, MAP_KEY_ITERATE_KEY, TriggerType } from './constants.js'
 import { track, trigger } from './effect.js'
 import { hasChanged, hasOwn, isObject } from './utils.js'
 
@@ -30,10 +30,11 @@ function createMutableInstrumentations(isShallow = false, isReadonly = false) {
   function createIterableMethod(method) {
     return function () {
       const target = this.raw
-      const isPair = method === 'entries' || method === Symbol.iterator
+      const targetIsMap = target instanceof Map
+      const isPair = method === 'entries' || (method === Symbol.iterator && targetIsMap)
       const itr = target[method]()
       if (!isReadonly) {
-        const isKeyOnly = method === 'keys'
+        const isKeyOnly = method === 'keys' && targetIsMap
         track(target, isKeyOnly ? MAP_KEY_ITERATE_KEY : ITERATE_KEY)
       }
       return {
