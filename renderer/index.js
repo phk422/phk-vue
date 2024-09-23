@@ -28,8 +28,21 @@ export function createRenderer(options = rendererOptions) {
     // 设置属性
     if (vnode.props) {
       for (const key in vnode.props) {
-        // el.setAttribute(key, vnode.props[key])
-        el[key] = vnode.props[key]
+        if (key in el) {
+          // 获取该 DOM Properties 的类型
+          const type = typeof el[key]
+          const value = vnode.props[key]
+          if (type === 'boolean' && value === '') {
+            el[key] = true
+          }
+          else {
+            el[key] = value
+          }
+        }
+        else {
+          // 如果要设置的属性没有对应的 DOM Properties，则使用 setAttribute 函数设置属性
+          el.setAttribute(key, vnode.props[key])
+        }
       }
     }
     insert(el, container)
