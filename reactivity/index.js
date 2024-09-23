@@ -1,5 +1,6 @@
 export * from './computed.js'
 export * from './effect.js'
 export * from './reactive.js'
+export * from './ref.js'
 export * from './scheduler.js'
 export * from './watch.js'
