@@ -6,3 +6,7 @@ export const TriggerType = {
   SET: 'SET',
   DELETE: 'DELETE',
 }
+
+export const ReactiveFlags = {
+  IS_REF: '__v_isRef',
+}

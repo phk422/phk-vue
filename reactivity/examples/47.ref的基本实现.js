@@ -7,3 +7,4 @@ effect(() => {
 })
 
 count.value++
+console.log(count)
