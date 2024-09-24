@@ -31,7 +31,12 @@ export const rendererOptions = {
         else {
           // add
           existingInvoker = el._vei = (e) => {
-            existingInvoker.value(e)
+            if (Array.isArray(existingInvoker.value)) {
+              existingInvoker.value.forEach(fn => fn(e))
+            }
+            else {
+              existingInvoker.value(e)
+            }
           }
           existingInvoker.value = nextValue
           invoker[name] = existingInvoker
