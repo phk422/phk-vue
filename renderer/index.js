@@ -103,8 +103,34 @@ export function createRenderer(options = rendererOptions) {
       parent.removeChild(el)
   }
 
+  function patchChildren(n1, n2, container) {
+    // 判断新子节点的类型
+    // 1.新子节点是字符串
+    if (typeof n2.children === 'string') {
+      // 如果旧子节点是数组需要执行卸载操作
+      if (Array.isArray(n1.children)) {
+        n1.children.forEach(child => unmount(child))
+      }
+      setElementText(container, n2.children)
+    }
+    else if (Array.isArray(n2.children)) {
+      // 2. 新子节点是数组
+      // 判断旧子节点是否是数组
+      if (Array.isArray(n1.children)) {
+        console.log('新旧子节点均为数组的情况->TODO')
+      }
+      else {
+        // 旧子节点可能是文本，或者不存在
+        // 清空容器
+        setElementText(container, '')
+        // 挂载新节点
+        n2.children.forEach(child => patch(null, child, container))
+      }
+    }
+  }
+
   function patchElement(n1, n2) {
-    const el = n1.el
+    const el = n2.el = n1.el
     const oldProps = n1.props
     const newProps = n2.props
     // 修改现有的属性
@@ -119,8 +145,8 @@ export function createRenderer(options = rendererOptions) {
         patchProps(el, key, oldProps[key], null)
       }
     }
-    // TODO
-    console.log(n1, n2)
+    // 更新子节点
+    patchChildren(n1, n2, el)
   }
 
   function patch(n1, n2, container) {
