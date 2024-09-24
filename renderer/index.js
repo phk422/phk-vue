@@ -18,7 +18,30 @@ export const rendererOptions = {
     parent.insertBefore(child, anchor)
   },
   patchProps(el, key, prevValue, nextValue) {
-    if (key === 'class') {
+    // 更高效的处理事件的更改与移除
+    if (key.startsWith('on')) {
+      const name = key.slice(2).toLowerCase()
+      let invoker = el._vei
+      if (nextValue) {
+        // patch
+        if (invoker) {
+          invoker.value = nextValue
+        }
+        else {
+          // add
+          invoker = el._vei = (e) => {
+            invoker.value(e)
+          }
+          invoker.value = nextValue
+          el.addEventListener(name, invoker)
+        }
+      }
+      else if (invoker) {
+        // remove
+        el.removeEventListener(name, invoker)
+      }
+    }
+    else if (key === 'class') {
       el.className = normalizeClass(nextValue)
     }
     else if (shouldSetAsProps(el, key)) {
@@ -89,6 +112,8 @@ export function createRenderer(options = rendererOptions) {
       }
       else {
         console.log('TODO patchElement')
+        unmount(n1)
+        mountElement(n2, container)
       }
     }
     else if (typeof type === 'object') {
