@@ -30,7 +30,7 @@ export const rendererOptions = {
         }
         else {
           // add
-          existingInvoker = el._vei = (e) => {
+          existingInvoker = (e) => {
             if (Array.isArray(existingInvoker.value)) {
               existingInvoker.value.forEach(fn => fn(e))
             }
