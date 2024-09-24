@@ -40,8 +40,11 @@ export const rendererOptions = {
 
 export function createRenderer(options = rendererOptions) {
   const { createElement, setElementText, insert, patchProps } = options
+
+  // 挂载操作
   function mountElement(vnode, container) {
-    const el = createElement(vnode.type)
+    // 将真实的dom保存到vnode上
+    const el = vnode.el = createElement(vnode.type)
     // 处理子节点
     if (typeof vnode.children === 'string') {
       setElementText(el, vnode.children)
@@ -62,6 +65,14 @@ export function createRenderer(options = rendererOptions) {
     insert(el, container)
   }
 
+  // 卸载操作
+  function unmount(vnode) {
+    const el = vnode.el
+    const parent = el.parentNode
+    if (parent)
+      parent.removeChild(el)
+  }
+
   function patch(n1, n2, container) {
     if (!n1) {
       // 挂载
@@ -79,7 +90,7 @@ export function createRenderer(options = rendererOptions) {
     }
     else {
       if (container._vnode) {
-        container.innerHTML = ''
+        unmount(container._vnode)
       }
     }
     container._vnode = vnode
