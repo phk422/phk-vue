@@ -103,6 +103,26 @@ export function createRenderer(options = rendererOptions) {
       parent.removeChild(el)
   }
 
+  function patchElement(n1, n2) {
+    const el = n1.el
+    const oldProps = n1.props
+    const newProps = n2.props
+    // 修改现有的属性
+    for (const key in newProps) {
+      if (newProps[key] !== oldProps[key]) {
+        patchProps(el, key, oldProps[key], newProps[key])
+      }
+    }
+    // 移除没有的属性
+    for (const key in oldProps) {
+      if (!(key in newProps)) {
+        patchProps(el, key, oldProps[key], null)
+      }
+    }
+    // TODO
+    console.log(n1, n2)
+  }
+
   function patch(n1, n2, container) {
     // 如果n1存在，对比n1与n2的类型
     if (n1 && n1.type !== n2.type) {
@@ -118,7 +138,7 @@ export function createRenderer(options = rendererOptions) {
         mountElement(n2, container)
       }
       else {
-        console.log('TODO patchElement')
+        patchElement(n1, n2)
       }
     }
     else if (typeof type === 'object') {
