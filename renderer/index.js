@@ -119,8 +119,6 @@ export function createRenderer(options = rendererOptions) {
       }
       else {
         console.log('TODO patchElement')
-        unmount(n1)
-        mountElement(n2, container)
       }
     }
     else if (typeof type === 'object') {
