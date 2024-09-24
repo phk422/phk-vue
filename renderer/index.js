@@ -15,10 +15,26 @@ export const rendererOptions = {
   insert: (child, parent, anchor = null) => {
     parent.insertBefore(child, anchor)
   },
+  patchProps(el, key, prevValue, nextValue) {
+    if (shouldSetAsProps(el, key)) {
+      // 获取该 DOM Properties 的类型
+      const type = typeof el[key]
+      if (type === 'boolean' && nextValue === '') {
+        el[key] = true
+      }
+      else {
+        el[key] = nextValue
+      }
+    }
+    else {
+      // 如果要设置的属性没有对应的 DOM Properties，则使用 setAttribute 函数设置属性
+      el.setAttribute(key, nextValue)
+    }
+  },
 }
 
 export function createRenderer(options = rendererOptions) {
-  const { createElement, setElementText, insert } = options
+  const { createElement, setElementText, insert, patchProps } = options
   function mountElement(vnode, container) {
     const el = createElement(vnode.type)
     // 处理子节点
@@ -35,21 +51,7 @@ export function createRenderer(options = rendererOptions) {
     // 设置属性
     if (vnode.props) {
       for (const key in vnode.props) {
-        if (shouldSetAsProps(el, key)) {
-          // 获取该 DOM Properties 的类型
-          const type = typeof el[key]
-          const value = vnode.props[key]
-          if (type === 'boolean' && value === '') {
-            el[key] = true
-          }
-          else {
-            el[key] = value
-          }
-        }
-        else {
-          // 如果要设置的属性没有对应的 DOM Properties，则使用 setAttribute 函数设置属性
-          el.setAttribute(key, vnode.props[key])
-        }
+        patchProps(el, key, null, vnode.props[key])
       }
     }
     insert(el, container)
