@@ -74,13 +74,28 @@ export function createRenderer(options = rendererOptions) {
   }
 
   function patch(n1, n2, container) {
-    if (!n1) {
-      // 挂载
-      mountElement(n2, container)
+    // 如果n1存在，对比n1与n2的类型
+    if (n1 && n1.type !== n2.type) {
+      // 直接卸载n1
+      unmount(n1)
+      n1 = null
+    }
+
+    const { type } = n2
+    if (typeof type === 'string') {
+      if (!n1) {
+        // 挂载
+        mountElement(n2, container)
+      }
+      else {
+        console.log('TODO patchElement')
+      }
+    }
+    else if (typeof type === 'object') {
+      console.log('处理组件类型')
     }
     else {
-      console.log('打补丁-> TODO')
-      // 暂时直接执行
+      console.log('处理其他类型')
     }
   }
 
