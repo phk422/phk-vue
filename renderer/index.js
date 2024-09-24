@@ -21,24 +21,26 @@ export const rendererOptions = {
     // 更高效的处理事件的更改与移除
     if (key.startsWith('on')) {
       const name = key.slice(2).toLowerCase()
-      let invoker = el._vei
+      const invoker = el._vei || (el._vei = {})
+      let existingInvoker = invoker[name]
       if (nextValue) {
         // patch
-        if (invoker) {
-          invoker.value = nextValue
+        if (existingInvoker) {
+          existingInvoker.value = nextValue
         }
         else {
           // add
-          invoker = el._vei = (e) => {
-            invoker.value(e)
+          existingInvoker = el._vei = (e) => {
+            existingInvoker.value(e)
           }
-          invoker.value = nextValue
-          el.addEventListener(name, invoker)
+          existingInvoker.value = nextValue
+          invoker[name] = existingInvoker
+          el.addEventListener(name, existingInvoker)
         }
       }
-      else if (invoker) {
+      else if (existingInvoker) {
         // remove
-        el.removeEventListener(name, invoker)
+        el.removeEventListener(name, existingInvoker)
       }
     }
     else if (key === 'class') {
