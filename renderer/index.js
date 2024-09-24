@@ -117,7 +117,11 @@ export function createRenderer(options = rendererOptions) {
       // 2. 新子节点是数组
       // 判断旧子节点是否是数组
       if (Array.isArray(n1.children)) {
-        console.log('新旧子节点均为数组的情况->TODO')
+        // 暴力：无diff算法
+        // 卸载所有旧节点
+        n1.children.forEach(child => unmount(child))
+        // 挂在新节点
+        n2.children.forEach(child => patch(null, child, container))
       }
       else {
         // 旧子节点可能是文本，或者不存在
