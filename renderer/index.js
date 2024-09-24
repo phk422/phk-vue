@@ -1,3 +1,10 @@
+function shouldSetAsProps(el, key) {
+  // 只读的属性处理 需要使用setAttribute设置
+  if (key === 'form' && el.tagName === 'INPUT')
+    return false
+  return key in el
+}
+
 export const rendererOptions = {
   createElement(tag) {
     return document.createElement(tag)
@@ -28,7 +35,7 @@ export function createRenderer(options = rendererOptions) {
     // 设置属性
     if (vnode.props) {
       for (const key in vnode.props) {
-        if (key in el) {
+        if (shouldSetAsProps(el, key)) {
           // 获取该 DOM Properties 的类型
           const type = typeof el[key]
           const value = vnode.props[key]
