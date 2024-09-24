@@ -1,7 +1,15 @@
 import { ReactiveFlags } from './constants.js'
-import { reactive } from './reactive.js'
+import { reactive, shallowReactive } from './reactive.js'
 
 export function ref(value) {
+  return createRef(value)
+}
+
+export function shallowRef(value) {
+  return createRef(value, true)
+}
+
+export function createRef(value, shallow = false) {
   const wrapper = {
     value,
   }
@@ -9,7 +17,7 @@ export function ref(value) {
   Object.defineProperty(wrapper, ReactiveFlags.IS_REF, {
     value: true,
   })
-  return reactive(wrapper)
+  return shallow ? shallowReactive(wrapper) : reactive(wrapper)
 }
 
 export function toRef(obj, key) {
