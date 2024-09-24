@@ -131,6 +131,17 @@ export function createRenderer(options = rendererOptions) {
         n2.children.forEach(child => patch(null, child, container))
       }
     }
+    else {
+      // 没有新字节点的情况
+      if (typeof n1.children === 'string') {
+        // 旧子节点是文本直接清空
+        setElementText(container, '')
+      }
+      else if (Array.isArray(n1.children)) {
+        // 旧子节点是数组挨个卸载
+        n1.children.forEach(child => unmount(child))
+      }
+    }
   }
 
   function patchElement(n1, n2) {
