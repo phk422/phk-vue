@@ -156,6 +156,7 @@ export function createRenderer(options = rendererOptions) {
         // 有key的情况
         const oldChildren = n1.children
         const newChildren = n2.children
+        // 移动，添加操作
         let lastIndex = 0
         for (let i = 0; i < newChildren.length; i++) {
           let find = false
@@ -195,6 +196,16 @@ export function createRenderer(options = rendererOptions) {
               anchor = container.firstChild
             }
             patch(null, newChildren[i], container, anchor)
+          }
+        }
+
+        // 移除操作
+        for (let i = 0; i < oldChildren.length; i++) {
+          const oldVNode = oldChildren[i]
+          const has = newChildren.find(c => c.key === oldVNode.key)
+          if (!has) {
+            // 新节点中没有就移除
+            unmount(oldVNode)
           }
         }
       }
