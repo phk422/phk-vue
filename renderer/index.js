@@ -127,9 +127,25 @@ export function createRenderer(options = rendererOptions) {
       if (Array.isArray(n1.children)) {
         const oldChildren = n1.children
         const newChildren = n2.children
-        // 遍历旧节点，逐个patch
-        for (let i = 0; i < oldChildren.length; i++) {
+        const oldLen = oldChildren.length
+        const newLen = newChildren.length
+        // 获取最小的长度
+        const commonLen = Math.min(oldLen, newLen)
+        // 逐个patch
+        for (let i = 0; i < commonLen; i++) {
           patch(oldChildren[i], newChildren[i], container)
+        }
+        if (newLen > oldLen) {
+          // 新节点多，挂载
+          for (let i = commonLen; i < newLen; i++) {
+            patch(null, newChildren[i], container)
+          }
+        }
+        else {
+          // 旧节点多，卸载
+          for (let i = commonLen; i < oldLen; i++) {
+            unmount(oldChildren[i])
+          }
         }
       }
       else {
