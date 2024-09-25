@@ -20,7 +20,7 @@ const newNode = [
     children: [
       { type: 'li', children: '33', key: '3' },
       { type: 'li', children: '2', key: '2' },
-      { type: 'li', children: '1', key: '1' },
+      // { type: 'li', children: '1', key: '1' },
     ],
   },
 ]

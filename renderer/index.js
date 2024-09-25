@@ -2,6 +2,10 @@ import { normalizeClass } from './utils.js'
 
 // 片段
 export const Fragment = Symbol()
+// 文本节点
+export const Text = Symbol()
+// 注释节点
+export const Comment = Symbol()
 
 function shouldSetAsProps(el, key) {
   // 只读的属性处理 需要使用setAttribute设置
@@ -19,6 +23,15 @@ export const rendererOptions = {
   },
   insert: (child, parent, anchor = null) => {
     parent.insertBefore(child, anchor)
+  },
+  createComment(data) {
+    return document.createComment(data)
+  },
+  createText(data) {
+    return document.createTextNode(data)
+  },
+  setText(el, text) {
+    el.nodeValue = text
   },
   patchProps(el, key, prevValue, nextValue) {
     // 更高效的处理事件的更改与移除
@@ -72,7 +85,7 @@ export const rendererOptions = {
 }
 
 export function createRenderer(options = rendererOptions) {
-  const { createElement, setElementText, insert, patchProps } = options
+  const { createElement, setElementText, insert, createText, createComment, setText, patchProps } = options
 
   // 挂载操作
   function mountElement(vnode, container, anchor) {
@@ -273,6 +286,13 @@ export function createRenderer(options = rendererOptions) {
         patchElement(n1, n2)
       }
     }
+    else if (type === Text) {
+      // 文本节点
+      processText(n1, n2, container)
+    }
+    else if (type === Comment) {
+      processCommentNode(n1, n2, container)
+    }
     else if (type === Fragment) {
       if (!n1) {
         // 旧节点不存在直接挂载新子节点
@@ -301,6 +321,30 @@ export function createRenderer(options = rendererOptions) {
       }
     }
     container._vnode = vnode
+  }
+
+  // 处理文本节点
+  function processText(n1, n2, container) {
+    if (!n1) {
+      const el = n2.el = createText(n2.children)
+      insert(el, container)
+    }
+    else {
+      const el = n2.el = n1.el
+      setText(el, n2.children)
+    }
+  }
+  // 处理注释节点
+  function processCommentNode(n1, n2, container) {
+    if (!n1) {
+      const el = n2.el = createComment(n2.children)
+      insert(el, container)
+    }
+    else {
+      // vue源码中实际上不支持动态的注释，因为这个没什么意义
+      n2.el = n1.el
+      // setText(n2.el = n1.el, n2.children)
+    }
   }
   return { render }
 }
