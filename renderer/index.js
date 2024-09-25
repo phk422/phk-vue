@@ -1,5 +1,8 @@
 import { normalizeClass } from './utils.js'
 
+// 片段
+export const Fragment = Symbol()
+
 function shouldSetAsProps(el, key) {
   // 只读的属性处理 需要使用setAttribute设置
   if (key === 'form' && el.tagName === 'INPUT')
@@ -97,6 +100,11 @@ export function createRenderer(options = rendererOptions) {
 
   // 卸载操作
   function unmount(vnode) {
+    // 如果卸载的是片段，需遍历子节点依次卸载
+    if (vnode.type === Fragment) {
+      vnode.children.forEach(c => unmount(c))
+      return
+    }
     const el = vnode.el
     const parent = el.parentNode
     if (parent)
@@ -180,6 +188,16 @@ export function createRenderer(options = rendererOptions) {
       }
       else {
         patchElement(n1, n2)
+      }
+    }
+    else if (type === Fragment) {
+      if (!n1) {
+        // 旧节点不存在直接挂载新子节点
+        n2.children.forEach(c => patch(null, c, container))
+      }
+      else {
+        // 旧节点存在，修改旧子节点
+        patchChildren(n1, n2, container)
       }
     }
     else if (typeof type === 'object') {
