@@ -137,6 +137,63 @@ export function createRenderer(options = rendererOptions) {
     }
   }
 
+  function patchKeyedChildren(n1, n2, container) {
+    const oldChildren = n1.children
+    const newChildren = n2.children
+    // 移动，添加操作
+    let lastIndex = 0
+    for (let i = 0; i < newChildren.length; i++) {
+      let find = false
+      for (let j = 0; j < oldChildren.length; j++) {
+        // 即便是key一样也需要打补丁，因为子节点可能会改变
+        if (newChildren[i].key === oldChildren[j].key) {
+          find = true
+          patch(oldChildren[j], newChildren[i], container)
+          if (lastIndex > j) {
+            // 需要移动节点
+            // 获取当前新节点的上一个节点
+            const prevVNode = newChildren[i - 1]
+            // 如果有上一个节点才需要移动
+            if (prevVNode) {
+              // 获取上一个节点的下一个兄弟节点作为锚点
+              const anchor = prevVNode.el.nextSibling
+              // 插入到prevVNode元素的后面,也就是锚点的前面
+              insert(newChildren[i].el, container, anchor)
+            }
+          }
+          else {
+            lastIndex = j
+          }
+          break
+        }
+      }
+      // 如果没有找到复用的节点说明需要新增
+      if (!find) {
+        // 获取当前新节点的上一个节点
+        const prevVNode = newChildren[i - 1]
+        let anchor = null
+        if (prevVNode) {
+          anchor = prevVNode.el.nextSibling
+        }
+        else {
+          // 说明是第一个节点,将锚点放在第一个
+          anchor = container.firstChild
+        }
+        patch(null, newChildren[i], container, anchor)
+      }
+    }
+
+    // 移除操作
+    for (let i = 0; i < oldChildren.length; i++) {
+      const oldVNode = oldChildren[i]
+      const has = newChildren.find(c => c.key === oldVNode.key)
+      if (!has) {
+        // 新节点中没有就移除
+        unmount(oldVNode)
+      }
+    }
+  }
+
   function patchChildren(n1, n2, container) {
     // 判断新子节点的类型
     // 1.新子节点是字符串
@@ -151,63 +208,11 @@ export function createRenderer(options = rendererOptions) {
       // 2. 新子节点是数组
       // 判断旧子节点是否是数组
       if (Array.isArray(n1.children)) {
+        // 在源码层面vue通过模版编译是去区分有key还是无key->PatchFlag
         // unkeyed
         // patchUnkeyedChildren(n1, n2, container)
         // 有key的情况
-        const oldChildren = n1.children
-        const newChildren = n2.children
-        // 移动，添加操作
-        let lastIndex = 0
-        for (let i = 0; i < newChildren.length; i++) {
-          let find = false
-          for (let j = 0; j < oldChildren.length; j++) {
-            // 即便是key一样也需要打补丁，因为子节点可能会改变
-            if (newChildren[i].key === oldChildren[j].key) {
-              find = true
-              patch(oldChildren[j], newChildren[i], container)
-              if (lastIndex > j) {
-                // 需要移动节点
-                // 获取当前新节点的上一个节点
-                const prevVNode = newChildren[i - 1]
-                // 如果有上一个节点才需要移动
-                if (prevVNode) {
-                  // 获取上一个节点的下一个兄弟节点作为锚点
-                  const anchor = prevVNode.el.nextSibling
-                  // 插入到prevVNode元素的后面,也就是锚点的前面
-                  insert(newChildren[i].el, container, anchor)
-                }
-              }
-              else {
-                lastIndex = j
-              }
-              break
-            }
-          }
-          // 如果没有找到复用的节点说明需要新增
-          if (!find) {
-            // 获取当前新节点的上一个节点
-            const prevVNode = newChildren[i - 1]
-            let anchor = null
-            if (prevVNode) {
-              anchor = prevVNode.el.nextSibling
-            }
-            else {
-              // 说明是第一个节点,将锚点放在第一个
-              anchor = container.firstChild
-            }
-            patch(null, newChildren[i], container, anchor)
-          }
-        }
-
-        // 移除操作
-        for (let i = 0; i < oldChildren.length; i++) {
-          const oldVNode = oldChildren[i]
-          const has = newChildren.find(c => c.key === oldVNode.key)
-          if (!has) {
-            // 新节点中没有就移除
-            unmount(oldVNode)
-          }
-        }
+        patchKeyedChildren(n1, n2, container)
       }
       else {
         // 旧子节点可能是文本，或者不存在
