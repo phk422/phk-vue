@@ -75,7 +75,7 @@ export function createRenderer(options = rendererOptions) {
   const { createElement, setElementText, insert, patchProps } = options
 
   // 挂载操作
-  function mountElement(vnode, container) {
+  function mountElement(vnode, container, anchor) {
     // 将真实的dom保存到vnode上
     const el = vnode.el = createElement(vnode.type)
     // 处理子节点
@@ -95,7 +95,7 @@ export function createRenderer(options = rendererOptions) {
         patchProps(el, key, null, vnode.props[key])
       }
     }
-    insert(el, container)
+    insert(el, container, anchor)
   }
 
   // 卸载操作
@@ -158,15 +158,17 @@ export function createRenderer(options = rendererOptions) {
         const newChildren = n2.children
         let lastIndex = 0
         for (let i = 0; i < newChildren.length; i++) {
+          let find = false
           for (let j = 0; j < oldChildren.length; j++) {
             // 即便是key一样也需要打补丁，因为子节点可能会改变
             if (newChildren[i].key === oldChildren[j].key) {
+              find = true
               patch(oldChildren[j], newChildren[i], container)
               if (lastIndex > j) {
                 // 需要移动节点
                 // 获取当前新节点的上一个节点
                 const prevVNode = newChildren[i - 1]
-                // 如果才能在才需要移动
+                // 如果有上一个节点才需要移动
                 if (prevVNode) {
                   // 获取上一个节点的下一个兄弟节点作为锚点
                   const anchor = prevVNode.el.nextSibling
@@ -179,6 +181,20 @@ export function createRenderer(options = rendererOptions) {
               }
               break
             }
+          }
+          // 如果没有找到复用的节点说明需要新增
+          if (!find) {
+            // 获取当前新节点的上一个节点
+            const prevVNode = newChildren[i - 1]
+            let anchor = null
+            if (prevVNode) {
+              anchor = prevVNode.el.nextSibling
+            }
+            else {
+              // 说明是第一个节点,将锚点放在第一个
+              anchor = container.firstChild
+            }
+            patch(null, newChildren[i], container, anchor)
           }
         }
       }
@@ -223,7 +239,7 @@ export function createRenderer(options = rendererOptions) {
     patchChildren(n1, n2, el)
   }
 
-  function patch(n1, n2, container) {
+  function patch(n1, n2, container, anchor = null) {
     // 如果n1存在，对比n1与n2的类型
     if (n1 && n1.type !== n2.type) {
       // 直接卸载n1
@@ -235,7 +251,7 @@ export function createRenderer(options = rendererOptions) {
     if (typeof type === 'string') {
       if (!n1) {
         // 挂载
-        mountElement(n2, container)
+        mountElement(n2, container, anchor)
       }
       else {
         patchElement(n1, n2)
