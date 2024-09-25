@@ -111,6 +111,32 @@ export function createRenderer(options = rendererOptions) {
       parent.removeChild(el)
   }
 
+  // eslint-disable-next-line unused-imports/no-unused-vars, no-unused-vars
+  function patchUnkeyedChildren(n1, n2, container) {
+    const oldChildren = n1.children
+    const newChildren = n2.children
+    const oldLen = oldChildren.length
+    const newLen = newChildren.length
+    // 获取最小的长度
+    const commonLen = Math.min(oldLen, newLen)
+    // 逐个patch
+    for (let i = 0; i < commonLen; i++) {
+      patch(oldChildren[i], newChildren[i], container)
+    }
+    if (newLen > oldLen) {
+      // 新节点多，挂载
+      for (let i = commonLen; i < newLen; i++) {
+        patch(null, newChildren[i], container)
+      }
+    }
+    else {
+      // 旧节点多，卸载
+      for (let i = commonLen; i < oldLen; i++) {
+        unmount(oldChildren[i])
+      }
+    }
+  }
+
   function patchChildren(n1, n2, container) {
     // 判断新子节点的类型
     // 1.新子节点是字符串
@@ -125,28 +151,8 @@ export function createRenderer(options = rendererOptions) {
       // 2. 新子节点是数组
       // 判断旧子节点是否是数组
       if (Array.isArray(n1.children)) {
-        const oldChildren = n1.children
-        const newChildren = n2.children
-        const oldLen = oldChildren.length
-        const newLen = newChildren.length
-        // 获取最小的长度
-        const commonLen = Math.min(oldLen, newLen)
-        // 逐个patch
-        for (let i = 0; i < commonLen; i++) {
-          patch(oldChildren[i], newChildren[i], container)
-        }
-        if (newLen > oldLen) {
-          // 新节点多，挂载
-          for (let i = commonLen; i < newLen; i++) {
-            patch(null, newChildren[i], container)
-          }
-        }
-        else {
-          // 旧节点多，卸载
-          for (let i = commonLen; i < oldLen; i++) {
-            unmount(oldChildren[i])
-          }
-        }
+        // unkeyed
+        // patchUnkeyedChildren(n1, n2, container)
       }
       else {
         // 旧子节点可能是文本，或者不存在
