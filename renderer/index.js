@@ -153,6 +153,18 @@ export function createRenderer(options = rendererOptions) {
       if (Array.isArray(n1.children)) {
         // unkeyed
         // patchUnkeyedChildren(n1, n2, container)
+        // 有key的情况
+        const oldChildren = n1.children
+        const newChildren = n2.children
+        for (let i = 0; i < newChildren.length; i++) {
+          for (let j = 0; j < oldChildren.length; j++) {
+            // 即便是key一样也需要打补丁，因为子节点可能会改变
+            if (newChildren[i].key === oldChildren[j].key) {
+              patch(oldChildren[j], newChildren[i], container)
+              break
+            }
+          }
+        }
       }
       else {
         // 旧子节点可能是文本，或者不存在
