@@ -156,11 +156,27 @@ export function createRenderer(options = rendererOptions) {
         // 有key的情况
         const oldChildren = n1.children
         const newChildren = n2.children
+        let lastIndex = 0
         for (let i = 0; i < newChildren.length; i++) {
           for (let j = 0; j < oldChildren.length; j++) {
             // 即便是key一样也需要打补丁，因为子节点可能会改变
             if (newChildren[i].key === oldChildren[j].key) {
               patch(oldChildren[j], newChildren[i], container)
+              if (lastIndex > j) {
+                // 需要移动节点
+                // 获取当前新节点的上一个节点
+                const prevVNode = newChildren[i - 1]
+                // 如果才能在才需要移动
+                if (prevVNode) {
+                  // 获取上一个节点的下一个兄弟节点作为锚点
+                  const anchor = prevVNode.el.nextSibling
+                  // 插入到prevVNode元素的后面,也就是锚点的前面
+                  insert(newChildren[i].el, container, anchor)
+                }
+              }
+              else {
+                lastIndex = j
+              }
               break
             }
           }
