@@ -1,4 +1,4 @@
-import { effect, reactive } from '../reactivity/index.js'
+import { effect, queueJob, reactive } from '../reactivity/index.js'
 import { normalizeClass } from './utils.js'
 
 // 片段
@@ -363,6 +363,8 @@ export function createRenderer(options = rendererOptions) {
     effect(() => {
       const subTree = render.call(state, state)
       patch(null, subTree, container, anchor)
+    }, {
+      scheduler: queueJob,
     })
   }
   return { render }

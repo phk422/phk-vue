@@ -13,3 +13,8 @@ export function flushJob() {
     jobQueue.forEach(job => job())
   }).finally(() => isFlushing = false)
 }
+
+export function queueJob(job) {
+  jobQueue.add(job)
+  flushJob()
+}
