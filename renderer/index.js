@@ -304,7 +304,7 @@ export function createRenderer(options = rendererOptions) {
       }
     }
     else if (typeof type === 'object') {
-      console.log('处理组件类型')
+      processComponent(n1, n2, container, anchor)
     }
     else {
       console.log('处理其他类型')
@@ -345,6 +345,19 @@ export function createRenderer(options = rendererOptions) {
       n2.el = n1.el
       // setText(n2.el = n1.el, n2.children)
     }
+  }
+  // 处理组件节点
+  function processComponent(n1, n2, container, anchor) {
+    if (!n1) {
+      mountComponent(n2, container, anchor)
+    }
+  }
+
+  function mountComponent(vnode, container, anchor) {
+    const componentOptions = vnode.type
+    const { render } = componentOptions
+    const subTree = render()
+    patch(null, subTree, container, anchor)
   }
   return { render }
 }
