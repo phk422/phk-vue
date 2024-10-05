@@ -1,3 +1,4 @@
+import { effect, reactive } from '../reactivity/index.js'
 import { normalizeClass } from './utils.js'
 
 // 片段
@@ -355,9 +356,14 @@ export function createRenderer(options = rendererOptions) {
 
   function mountComponent(vnode, container, anchor) {
     const componentOptions = vnode.type
-    const { render } = componentOptions
-    const subTree = render()
-    patch(null, subTree, container, anchor)
+    const { render, data } = componentOptions
+    // 包装为响应式数据
+    const state = reactive(data())
+    // 绑定this为state，并将state作为参数传递给render
+    effect(() => {
+      const subTree = render.call(state, state)
+      patch(null, subTree, container, anchor)
+    })
   }
   return { render }
 }
