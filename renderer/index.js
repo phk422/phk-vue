@@ -359,10 +359,30 @@ export function createRenderer(options = rendererOptions) {
     const { render, data } = componentOptions
     // 包装为响应式数据
     const state = reactive(data())
+
+    // 定义组件实例
+    const instance = {
+      // 组件的状态
+      state,
+      // 组件是否被挂载
+      isMounted: false,
+      // 组件所渲染的内容
+      subTree: null,
+
+    }
     // 绑定this为state，并将state作为参数传递给render
     effect(() => {
       const subTree = render.call(state, state)
-      patch(null, subTree, container, anchor)
+      if (!instance.isMounted) {
+        // 组件的挂载
+        patch(null, subTree, container, anchor)
+        instance.isMounted = true
+      }
+      else {
+        // 组件的更新
+        patch(instance.subTree, subTree, container, anchor)
+      }
+      instance.subTree = subTree
     }, {
       scheduler: queueJob,
     })
