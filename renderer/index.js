@@ -356,7 +356,10 @@ export function createRenderer(options = rendererOptions) {
 
   function mountComponent(vnode, container, anchor) {
     const componentOptions = vnode.type
-    const { render, data } = componentOptions
+    const { render, data, beforeCreate, created, beforeMount, mounted, beforeUpdate, updated } = componentOptions
+
+    beforeCreate && beforeCreate()
+
     // 包装为响应式数据
     const state = reactive(data())
 
@@ -370,17 +373,23 @@ export function createRenderer(options = rendererOptions) {
       subTree: null,
 
     }
+
+    created && created.call(state)
     // 绑定this为state，并将state作为参数传递给render
     effect(() => {
       const subTree = render.call(state, state)
       if (!instance.isMounted) {
+        beforeMount && beforeMount.call(state)
         // 组件的挂载
         patch(null, subTree, container, anchor)
         instance.isMounted = true
+        mounted && mounted.call(state)
       }
       else {
+        beforeUpdate && beforeUpdate.call(state)
         // 组件的更新
         patch(instance.subTree, subTree, container, anchor)
+        updated && updated.call(state)
       }
       instance.subTree = subTree
     }, {
