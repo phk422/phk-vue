@@ -401,12 +401,15 @@ export function createRenderer(options = rendererOptions) {
 
     const setupContext = { attrs }
     const setupResult = setup(shallowReadonly(props), setupContext)
-
+    let setupState = null
     if (typeof setupResult === 'function') {
       if (render)
         console.warn('setup 函数返回渲染函数，render 选项将被忽略')
 
       render = setupResult
+    }
+    else {
+      setupState = setupResult
     }
 
     vnode.component = instance
@@ -422,6 +425,10 @@ export function createRenderer(options = rendererOptions) {
         // 读取props
         else if (key in props) {
           return props[key]
+        }
+        // 将setup函数的返回值绑定到渲染对象上
+        else if (setupState && key in setupState) {
+          return setupState[key]
         }
         else {
           console.warn('不存在')
