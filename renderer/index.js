@@ -1,5 +1,5 @@
-import { effect, queueJob, reactive } from '../reactivity/index.js'
-import { normalizeClass } from './utils.js'
+import { effect, queueJob, reactive, shallowReactive } from '../reactivity/index.js'
+import { hasPropsChanged, normalizeClass, resolveProps } from './utils.js'
 
 // 片段
 export const Fragment = Symbol()
@@ -352,11 +352,34 @@ export function createRenderer(options = rendererOptions) {
     if (!n1) {
       mountComponent(n2, container, anchor)
     }
+    else {
+      // 更新组件
+      patchComponent(n1, n2, container)
+    }
+  }
+
+  function patchComponent(n1, n2) {
+    const instance = n2.component = n1.component
+    const { props } = instance
+    if (hasPropsChanged(n1.props, n2.props)) {
+      // 获取新的props
+      const [nextProps] = resolveProps(n2.type.props, n2.props)
+      // 更新props
+      for (const key in nextProps) {
+        props[key] = nextProps[key]
+      }
+      // 删除不存在的key
+      for (const key in props) {
+        if (!(key in nextProps))
+          delete props[key]
+      }
+    }
   }
 
   function mountComponent(vnode, container, anchor) {
     const componentOptions = vnode.type
-    const { render, data, beforeCreate, created, beforeMount, mounted, beforeUpdate, updated } = componentOptions
+    const { render, props: propsData, data, beforeCreate, created, beforeMount, mounted, beforeUpdate, updated } = componentOptions
+    const [props] = resolveProps(propsData, vnode.props)
 
     beforeCreate && beforeCreate()
 
@@ -367,6 +390,8 @@ export function createRenderer(options = rendererOptions) {
     const instance = {
       // 组件的状态
       state,
+      // 组件的props
+      props: shallowReactive(props),
       // 组件是否被挂载
       isMounted: false,
       // 组件所渲染的内容
@@ -374,22 +399,55 @@ export function createRenderer(options = rendererOptions) {
 
     }
 
-    created && created.call(state)
+    vnode.component = instance
+
+    // 渲染上下文对象，组件实例的代理对象，即使用的this对象
+    const renderContext = new Proxy(instance, {
+      get(target, key) {
+        const { props, state } = target
+        // 读取state
+        if (key in state) {
+          return state[key]
+        }
+        // 读取props
+        else if (key in props) {
+          return props[key]
+        }
+        else {
+          console.warn('不存在')
+        }
+      },
+      set(target, key, newValue) {
+        const { props, state } = target
+        if (key in state) {
+          state[key] = newValue
+        }
+        else if (key in props) {
+          console.warn(`Attempting to mutate prop "${key}". Props 
+            are readonly.`)
+        }
+        else {
+          console.warn('不存在')
+        }
+      },
+    })
+
+    created && created.call(renderContext)
     // 绑定this为state，并将state作为参数传递给render
     effect(() => {
-      const subTree = render.call(state, state)
+      const subTree = render.call(renderContext, state)
       if (!instance.isMounted) {
-        beforeMount && beforeMount.call(state)
+        beforeMount && beforeMount.call(renderContext)
         // 组件的挂载
         patch(null, subTree, container, anchor)
         instance.isMounted = true
-        mounted && mounted.call(state)
+        mounted && mounted.call(renderContext)
       }
       else {
-        beforeUpdate && beforeUpdate.call(state)
+        beforeUpdate && beforeUpdate.call(renderContext)
         // 组件的更新
         patch(instance.subTree, subTree, container, anchor)
-        updated && updated.call(state)
+        updated && updated.call(renderContext)
       }
       instance.subTree = subTree
     }, {
