@@ -1,4 +1,4 @@
-import { effect, queueJob, reactive, shallowReactive } from '../reactivity/index.js'
+import { effect, queueJob, reactive, shallowReactive, shallowReadonly } from '../reactivity/index.js'
 import { hasPropsChanged, normalizeClass, resolveProps } from './utils.js'
 
 // 片段
@@ -378,13 +378,13 @@ export function createRenderer(options = rendererOptions) {
 
   function mountComponent(vnode, container, anchor) {
     const componentOptions = vnode.type
-    const { render, props: propsData, data, beforeCreate, created, beforeMount, mounted, beforeUpdate, updated } = componentOptions
-    const [props] = resolveProps(propsData, vnode.props)
+    let { render, props: propsData, data, setup, beforeCreate, created, beforeMount, mounted, beforeUpdate, updated } = componentOptions
+    const [props, attrs] = resolveProps(propsData, vnode.props)
 
     beforeCreate && beforeCreate()
 
     // 包装为响应式数据
-    const state = reactive(data())
+    const state = data ? reactive(data()) : null
 
     // 定义组件实例
     const instance = {
@@ -399,6 +399,16 @@ export function createRenderer(options = rendererOptions) {
 
     }
 
+    const setupContext = { attrs }
+    const setupResult = setup(shallowReadonly(props), setupContext)
+
+    if (typeof setupResult === 'function') {
+      if (render)
+        console.warn('setup 函数返回渲染函数，render 选项将被忽略')
+
+      render = setupResult
+    }
+
     vnode.component = instance
 
     // 渲染上下文对象，组件实例的代理对象，即使用的this对象
@@ -406,7 +416,7 @@ export function createRenderer(options = rendererOptions) {
       get(target, key) {
         const { props, state } = target
         // 读取state
-        if (key in state) {
+        if (state && key in state) {
           return state[key]
         }
         // 读取props
