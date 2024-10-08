@@ -378,6 +378,8 @@ export function createRenderer(options = rendererOptions) {
 
   function mountComponent(vnode, container, anchor) {
     const componentOptions = vnode.type
+    // 直接将组件的children复制给slots
+    const slots = vnode.children || {}
 
     let { render, props: propsData = {}, data, setup, beforeCreate, created, beforeMount, mounted, beforeUpdate, updated } = componentOptions
     const [props, attrs] = resolveProps(propsData, vnode.props)
@@ -397,6 +399,8 @@ export function createRenderer(options = rendererOptions) {
       isMounted: false,
       // 组件所渲染的内容
       subTree: null,
+      // 组件的插槽
+      slots,
 
     }
 
@@ -412,7 +416,7 @@ export function createRenderer(options = rendererOptions) {
       }
     }
 
-    const setupContext = { attrs, emit }
+    const setupContext = { attrs, emit, slots }
     const setupResult = setup(shallowReadonly(props), setupContext)
     let setupState = null
     if (typeof setupResult === 'function') {
@@ -430,7 +434,10 @@ export function createRenderer(options = rendererOptions) {
     // 渲染上下文对象，组件实例的代理对象，即使用的this对象
     const renderContext = new Proxy(instance, {
       get(target, key) {
-        const { props, state } = target
+        const { props, state, slots } = target
+        // 插槽处理
+        if (key === '$slots')
+          return slots
         // 读取state
         if (state && key in state) {
           return state[key]
