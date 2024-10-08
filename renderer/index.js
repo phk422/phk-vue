@@ -135,6 +135,11 @@ export function createRenderer(options = rendererOptions) {
       vnode.children.forEach(c => unmount(c))
       return
     }
+    // 卸载组件
+    if (typeof vnode.type === 'object') {
+      unmount(vnode.component.subTree)
+      return
+    }
     const el = vnode.el
     const parent = el.parentNode
     if (parent)
