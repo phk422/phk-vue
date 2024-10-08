@@ -30,6 +30,14 @@ export function onMounted(fn) {
     console.error('onMounted' + '只能在setup中调用')
   }
 }
+export function onUnmounted(fn) {
+  if (currentInstance) {
+    currentInstance.unmounted.push(fn)
+  }
+  else {
+    console.error('onUnmounted' + '只能在setup中调用')
+  }
+}
 
 export const rendererOptions = {
   createElement(tag) {
@@ -138,6 +146,7 @@ export function createRenderer(options = rendererOptions) {
     // 卸载组件
     if (typeof vnode.type === 'object') {
       unmount(vnode.component.subTree)
+      vnode.component.unmounted.forEach(hook => hook())
       return
     }
     const el = vnode.el
@@ -424,7 +433,7 @@ export function createRenderer(options = rendererOptions) {
       slots,
       // 用来保存onMounted注册的hooks
       mounted: [],
-
+      unmounted: [],
     }
 
     function emit(event, ...payload) {
