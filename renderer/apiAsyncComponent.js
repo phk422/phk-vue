@@ -7,9 +7,27 @@ export function defineAsyncComponent(options) {
     }
   }
 
-  const { loader } = options
+  const { loader, onError: userOnError } = options
   // 存储异步加载的组件
   let InnerComp = null
+  let retries = 0
+  const load = () => {
+    return loader().catch((err) => {
+      if (userOnError) {
+        return new Promise((resolve, reject) => {
+          const retry = () => {
+            retries++
+            resolve(load())
+          }
+          const fail = () => reject(err)
+          userOnError(err, retry, fail, retries + 1)
+        })
+      }
+      else {
+        throw err
+      }
+    })
+  }
   return {
     name: 'AsyncComponentWrapper',
     setup() {
@@ -31,12 +49,13 @@ export function defineAsyncComponent(options) {
       }
       // 需要清理定时器
       onUnmounted(() => clearTimeout(timer))
-      loader().then((c) => {
+      load().then((c) => {
         InnerComp = c
         loaded.value = true
+        loading.value = false
+        clearTimeout(loadingTimer)
       }).catch((e) => {
         error.value = e
-      }).finally(() => {
         loading.value = false
         clearTimeout(loadingTimer)
       })

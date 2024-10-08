@@ -1,4 +1,5 @@
 export default {
+  name: 'LoadingComponent',
   setup() {
     return () => {
       return {
