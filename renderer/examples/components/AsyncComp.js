@@ -10,6 +10,6 @@ export function getComp() {
           }
         },
       })
-    }, 1000),
+    }, 2000),
   ])
 }
