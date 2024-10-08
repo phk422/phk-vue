@@ -13,3 +13,11 @@ export function getComp() {
     }, 2000),
   ])
 }
+
+export function getCompErr() {
+  return new Promise((resolve, reject) => [
+    setTimeout(() => {
+      reject(new Error('组件加载失败'))
+    }, 500),
+  ])
+}

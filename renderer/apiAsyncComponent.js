@@ -14,12 +14,12 @@ export function defineAsyncComponent(options) {
     name: 'AsyncComponentWrapper',
     setup() {
       const loaded = ref(false)
-      // 判断组件是否超时
-      const timeout = ref(false)
+      // error
+      const error = ref(null)
       let timer = null
       if (options.timeout) {
         timer = setTimeout(() => {
-          timeout.value = true
+          error.value = `Async component timed out after ${options.timeout}ms.`
         }, options.timeout)
       }
       // 需要清理定时器
@@ -27,14 +27,16 @@ export function defineAsyncComponent(options) {
       loader().then((c) => {
         InnerComp = c
         loaded.value = true
+      }).catch((e) => {
+        error.value = e
       })
       // 占位组件
       const placeholder = { type: Text, children: '' }
       return () => {
         if (loaded.value)
           return { type: InnerComp }
-        else if (timeout.value)
-          return options.errorComponent ? { type: options.errorComponent } : placeholder
+        else if (error.value && options.errorComponent)
+          return { type: options.errorComponent, props: { error: error.value } } // 将error传递给用户，可以自己处理错误
         return placeholder
       }
     },
