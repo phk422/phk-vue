@@ -14,6 +14,7 @@ export function defineAsyncComponent(options) {
     name: 'AsyncComponentWrapper',
     setup() {
       const loaded = ref(false)
+      const loading = ref(false)
       // error
       const error = ref(null)
       let timer = null
@@ -22,6 +23,12 @@ export function defineAsyncComponent(options) {
           error.value = `Async component timed out after ${options.timeout}ms.`
         }, options.timeout)
       }
+      let loadingTimer = null
+      if (options.delay) {
+        loadingTimer = setTimeout(() => {
+          loading.value = true
+        }, options.delay)
+      }
       // 需要清理定时器
       onUnmounted(() => clearTimeout(timer))
       loader().then((c) => {
@@ -29,14 +36,22 @@ export function defineAsyncComponent(options) {
         loaded.value = true
       }).catch((e) => {
         error.value = e
+      }).finally(() => {
+        loading.value = false
+        clearTimeout(loadingTimer)
       })
       // 占位组件
       const placeholder = { type: Text, children: '' }
       return () => {
-        if (loaded.value)
+        if (loaded.value) {
           return { type: InnerComp }
-        else if (error.value && options.errorComponent)
+        }
+        else if (error.value && options.errorComponent) {
           return { type: options.errorComponent, props: { error: error.value } } // 将error传递给用户，可以自己处理错误
+        }
+        else if (loading.value && options.loadingComponent) {
+          return { type: options.loadingComponent }
+        }
         return placeholder
       }
     },
