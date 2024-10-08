@@ -334,7 +334,7 @@ export function createRenderer(options = rendererOptions) {
         patchChildren(n1, n2, container)
       }
     }
-    else if (typeof type === 'object') {
+    else if (typeof type === 'object' || typeof type === 'function') {
       processComponent(n1, n2, container, anchor)
     }
     else {
@@ -407,7 +407,16 @@ export function createRenderer(options = rendererOptions) {
   }
 
   function mountComponent(vnode, container, anchor) {
-    const componentOptions = vnode.type
+    let componentOptions = vnode.type
+    const isFunctional = typeof vnode.type === 'function'
+    // 判断是否是函数式组件
+    if (isFunctional) {
+      componentOptions = {
+        render: vnode.type,
+        props: vnode.type.props,
+      }
+    }
+
     // 直接将组件的children复制给slots
     const slots = vnode.children || {}
 
@@ -508,7 +517,7 @@ export function createRenderer(options = rendererOptions) {
     created && created.call(renderContext)
     // 绑定this为state，并将state作为参数传递给render
     effect(() => {
-      const subTree = render.call(renderContext, state)
+      const subTree = render.call(renderContext, isFunctional ? shallowReadonly(props) : state)
       if (!instance.isMounted) {
         beforeMount && beforeMount.call(renderContext)
         // 组件的挂载
