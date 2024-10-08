@@ -378,7 +378,8 @@ export function createRenderer(options = rendererOptions) {
 
   function mountComponent(vnode, container, anchor) {
     const componentOptions = vnode.type
-    let { render, props: propsData, data, setup, beforeCreate, created, beforeMount, mounted, beforeUpdate, updated } = componentOptions
+
+    let { render, props: propsData = {}, data, setup, beforeCreate, created, beforeMount, mounted, beforeUpdate, updated } = componentOptions
     const [props, attrs] = resolveProps(propsData, vnode.props)
 
     beforeCreate && beforeCreate()
@@ -399,7 +400,19 @@ export function createRenderer(options = rendererOptions) {
 
     }
 
-    const setupContext = { attrs }
+    function emit(event, ...payload) {
+      // 从props中获取事件函数
+      const eventName = `on${event[0].toUpperCase() + event.slice(1)}`
+      const handler = instance.props[eventName]
+      if (handler) {
+        handler(...payload)
+      }
+      else {
+        console.error(`${eventName}事件不存在`)
+      }
+    }
+
+    const setupContext = { attrs, emit }
     const setupResult = setup(shallowReadonly(props), setupContext)
     let setupState = null
     if (typeof setupResult === 'function') {

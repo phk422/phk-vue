@@ -22,8 +22,8 @@ export function resolveProps(options, propsData) {
   const props = {}
   const attrs = {}
   for (const key in propsData) {
-    // 存在于组件定义的才是props
-    if (key in options) {
+    // 存在于组件定义的才是props; 或将on开头的事件放在props中
+    if (key in options || key.startsWith('on')) {
       props[key] = propsData[key]
     }
     else {
