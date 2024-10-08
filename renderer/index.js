@@ -15,6 +15,20 @@ function shouldSetAsProps(el, key) {
   return key in el
 }
 
+// 生命周期相关
+let currentInstance = null
+function setCurrentInstance(instance) {
+  currentInstance = instance
+}
+export function onMounted(fn) {
+  if (currentInstance) {
+    currentInstance.mounted.push(fn)
+  }
+  else {
+    console.error('onMounted' + '只能在setup中调用')
+  }
+}
+
 export const rendererOptions = {
   createElement(tag) {
     return document.createElement(tag)
@@ -401,6 +415,8 @@ export function createRenderer(options = rendererOptions) {
       subTree: null,
       // 组件的插槽
       slots,
+      // 用来保存onMounted注册的hooks
+      mounted: [],
 
     }
 
@@ -417,7 +433,11 @@ export function createRenderer(options = rendererOptions) {
     }
 
     const setupContext = { attrs, emit, slots }
+    // 在执行setup之前设置当前的组件实例
+    setCurrentInstance(instance)
     const setupResult = setup(shallowReadonly(props), setupContext)
+    // 执行完成后重置当前组件实例
+    setCurrentInstance(null)
     let setupState = null
     if (typeof setupResult === 'function') {
       if (render)
@@ -479,6 +499,7 @@ export function createRenderer(options = rendererOptions) {
         patch(null, subTree, container, anchor)
         instance.isMounted = true
         mounted && mounted.call(renderContext)
+        instance.mounted.forEach(hook => hook.call(renderContext))
       }
       else {
         beforeUpdate && beforeUpdate.call(renderContext)
