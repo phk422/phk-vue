@@ -33,7 +33,7 @@ export function resolveProps(options, propsData) {
   return [props, attrs]
 }
 
-export function hasPropsChanged(prevProps, nextProps) {
+export function hasPropsChanged(prevProps = {}, nextProps = {}) {
   const nextKeys = Object.keys(nextProps)
   // 比较新旧props keys是否有变化，有变化说明需要更新
   if (nextKeys.length !== Object.keys(prevProps).length)

@@ -1,6 +1,8 @@
 import { effect, queueJob, reactive, shallowReactive, shallowReadonly } from '../reactivity/index.js'
 import { hasPropsChanged, normalizeClass, resolveProps } from './utils.js'
 
+export * from './apiAsyncComponent.js'
+
 // 片段
 export const Fragment = Symbol()
 // 文本节点
@@ -435,7 +437,7 @@ export function createRenderer(options = rendererOptions) {
     const setupContext = { attrs, emit, slots }
     // 在执行setup之前设置当前的组件实例
     setCurrentInstance(instance)
-    const setupResult = setup(shallowReadonly(props), setupContext)
+    const setupResult = setup && setup(shallowReadonly(props), setupContext)
     // 执行完成后重置当前组件实例
     setCurrentInstance(null)
     let setupState = null
