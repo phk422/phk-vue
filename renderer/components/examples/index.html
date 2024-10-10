@@ -9,6 +9,32 @@
       .target {
         color: red;
       }
+
+      .box {
+        width: 200px;
+        height: 200px;
+        background-color: skyblue;
+        border-radius: 20px;
+      }
+
+      /* 描述初始状态 */
+      .enter-from,
+      .leave-to {
+        transform: translateX(200px);
+        opacity: 0;
+      }
+
+      /* 描述结束状态 */
+      .enter-to,
+      .leave-from {
+        transform: translateX(0);
+      }
+
+      /* 描述运动 */
+      .enter-active,
+      .leave-active {
+        transition: all 2s ease-in-out;
+      }
     </style>
   </head>
   <body>
@@ -20,7 +46,8 @@
       // import './01.KeepAlive的基本实现.js'
       // import './02.KeepAlive-include和exclude.js'
       // import './03.Teleport的基本实现.js'
-      import './04.Teleport-修改to属性.js'
+      // import './04.Teleport-修改to属性.js'
+      import './05.Transition的基本实现-入场与离场动画.js'
     </script>
   </body>
 </html>

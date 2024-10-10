@@ -141,7 +141,16 @@ export function createRenderer(options = rendererOptions) {
         patchProps(el, key, null, vnode.props[key])
       }
     }
+    // 挂载前
+    const needTransition = vnode.transition
+    if (needTransition) {
+      needTransition.beforeEnter(el)
+    }
     insert(el, container, anchor)
+    // 挂载后
+    if (needTransition) {
+      needTransition.enter(el)
+    }
   }
 
   // 卸载操作
@@ -165,8 +174,17 @@ export function createRenderer(options = rendererOptions) {
     }
     const el = vnode.el
     const parent = el.parentNode
-    if (parent)
-      parent.removeChild(el)
+    if (parent) {
+      const performRemove = () => parent.removeChild(el)
+      // 动画支持
+      const needTransition = vnode.transition
+      if (needTransition) {
+        needTransition.leave(el, performRemove)
+      }
+      else {
+        performRemove()
+      }
+    }
   }
 
   // eslint-disable-next-line unused-imports/no-unused-vars, no-unused-vars
@@ -315,11 +333,14 @@ export function createRenderer(options = rendererOptions) {
 
   function patch(n1, n2, container, anchor = null) {
     // 如果n1存在，对比n1与n2的类型
-    if (n1 && n1.type !== n2.type) {
+    if (n1 && n1.type !== n2?.type) {
       // 直接卸载n1
       unmount(n1)
       n1 = null
     }
+
+    if (!n2)
+      return
 
     const { type } = n2
     if (typeof type === 'string') {
