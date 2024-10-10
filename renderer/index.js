@@ -112,10 +112,13 @@ export const rendererOptions = {
       el.setAttribute(key, nextValue)
     }
   },
+  querySelector(selector) {
+    return document.querySelector(selector)
+  },
 }
 
 export function createRenderer(options = rendererOptions) {
-  const { createElement, setElementText, insert, createText, createComment, setText, patchProps } = options
+  const { createElement, setElementText, insert, createText, createComment, setText, querySelector, patchProps } = options
 
   // 挂载操作
   function mountElement(vnode, container, anchor) {
@@ -390,6 +393,20 @@ export function createRenderer(options = rendererOptions) {
   }
   // 处理组件节点
   function processComponent(n1, n2, container, anchor) {
+    // 判断是否是Teleport组件
+    if (n2.type.__isTeleport) {
+      // 将控制权交给Teleport组件，代码与渲染器解耦，也更利于treeShake
+      n2.type.process(n1, n2, container, anchor, {
+        // 这里传递一些要用的方法
+        patch,
+        patchChildren,
+        querySelector,
+        move() {
+
+        },
+      })
+      return
+    }
     if (!n1) {
       if (n2.keptAlive) {
         // 激活组件
