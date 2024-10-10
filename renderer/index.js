@@ -401,8 +401,9 @@ export function createRenderer(options = rendererOptions) {
         patch,
         patchChildren,
         querySelector,
-        move() {
-
+        move(vnode, container, anchor) {
+          // 是组件移动组件，元素移动元素
+          insert(vnode.component ? vnode.component.subTree.el : vnode.el, container, anchor)
         },
       })
       return
