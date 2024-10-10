@@ -2,6 +2,11 @@ import { getCurrentInstance } from '../../vue/index.js'
 
 const KeepAlive = {
   __isKeepAlive: true, // 标识为KeepAlive组件对象
+
+  props: {
+    include: RegExp,
+    exclude: RegExp,
+  },
   setup(props, { slots }) {
     // 缓存组件的容器
     const cache = new Map()
@@ -22,6 +27,11 @@ const KeepAlive = {
       const rawVNode = slots.default()
       // 如果不是一个组件直接返回渲染，只能是缓存组件
       if (typeof rawVNode.type !== 'object') {
+        return rawVNode
+      }
+      // 获取组件的name, 决定是否要缓存
+      const name = rawVNode.type.name
+      if (name && ((props.include && !props.include.test(name)) || (props.exclude && props.exclude.test(name)))) {
         return rawVNode
       }
       // 获取缓存的组件
