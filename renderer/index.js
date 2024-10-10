@@ -22,6 +22,9 @@ let currentInstance = null
 function setCurrentInstance(instance) {
   currentInstance = instance
 }
+export function getCurrentInstance() {
+  return currentInstance
+}
 export function onMounted(fn) {
   if (currentInstance) {
     currentInstance.mounted.push(fn)
@@ -46,6 +49,8 @@ export const rendererOptions = {
   setElementText(el, text) {
     el.textContent = text
   },
+  // https://developer.mozilla.org/zh-CN/docs/Web/API/Node/insertBefore
+  // 如果给定的节点已经存在于文档中，insertBefore() 会将其从当前位置移动到新位置。
   insert: (child, parent, anchor = null) => {
     parent.insertBefore(child, anchor)
   },
@@ -145,8 +150,14 @@ export function createRenderer(options = rendererOptions) {
     }
     // 卸载组件
     if (typeof vnode.type === 'object') {
-      unmount(vnode.component.subTree)
-      vnode.component.unmounted.forEach(hook => hook())
+      // 是KeepAlive, 不做真的卸载
+      if (vnode.shouldKeepAlive) {
+        vnode.keepAliveInstance.deactivate(vnode)
+      }
+      else {
+        unmount(vnode.component.subTree)
+        vnode.component.unmounted.forEach(hook => hook())
+      }
       return
     }
     const el = vnode.el
@@ -380,7 +391,13 @@ export function createRenderer(options = rendererOptions) {
   // 处理组件节点
   function processComponent(n1, n2, container, anchor) {
     if (!n1) {
-      mountComponent(n2, container, anchor)
+      if (n2.keptAlive) {
+        // 激活组件
+        n2.keepAliveInstance.activate(n2, container, anchor)
+      }
+      else {
+        mountComponent(n2, container, anchor)
+      }
     }
     else {
       // 更新组件
@@ -443,6 +460,18 @@ export function createRenderer(options = rendererOptions) {
       // 用来保存onMounted注册的hooks
       mounted: [],
       unmounted: [],
+
+      keepAliveCtx: null,
+    }
+
+    // 是否是KeepAlive组件
+    if (vnode.type.__isKeepAlive) {
+      instance.keepAliveCtx = {
+        move(vnode, container, anchor) {
+          insert(vnode.component.subTree.el, container, anchor)
+        },
+        createElement,
+      }
     }
 
     function emit(event, ...payload) {
