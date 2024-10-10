@@ -201,7 +201,7 @@ export function createRenderer(options = rendererOptions) {
       let find = false
       for (let j = 0; j < oldChildren.length; j++) {
         // 即便是key一样也需要打补丁，因为子节点可能会改变
-        if (newChildren[i].key === oldChildren[j].key) {
+        if (newChildren[i].key === oldChildren[j].key && newChildren[i].type === oldChildren[j].type) {
           find = true
           patch(oldChildren[j], newChildren[i], container)
           if (lastIndex > j) {
@@ -241,7 +241,7 @@ export function createRenderer(options = rendererOptions) {
     // 移除操作
     for (let i = 0; i < oldChildren.length; i++) {
       const oldVNode = oldChildren[i]
-      const has = newChildren.find(c => c.key === oldVNode.key)
+      const has = newChildren.find(c => c.key === oldVNode.key && c.type === oldVNode.type)
       if (!has) {
         // 新节点中没有就移除
         unmount(oldVNode)
