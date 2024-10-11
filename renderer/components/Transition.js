@@ -19,11 +19,15 @@ const Transition = {
           nextFrame(() => {
             el.classList.remove('enter-from')
             el.classList.add('enter-to')
+            const onEnd = (e) => {
+              if (e.target === el) {
+                el.removeEventListener('transitionend', onEnd)
+                el.classList.remove('enter-to')
+                el.classList.remove('enter-active')
+              }
+            }
             // 监听动画结束移除相关属性
-            el.addEventListener('transitionend', () => {
-              el.classList.remove('enter-to')
-              el.classList.remove('enter-active')
-            })
+            el.addEventListener('transitionend', onEnd)
           })
         },
         leave(el, performRemove) {
@@ -37,12 +41,16 @@ const Transition = {
           nextFrame(() => {
             el.classList.remove('leave-from')
             el.classList.add('leave-to')
-            el.addEventListener('transitionend', () => {
-              el.classList.remove('leave-to')
-              el.classList.remove('leave-active')
-              // 卸载
-              performRemove()
-            })
+            const onEnd = (e) => {
+              if (e.target === el) {
+                el.removeEventListener('transitionend', onEnd)
+                el.classList.remove('leave-to')
+                el.classList.remove('leave-active')
+                // 卸载
+                performRemove()
+              }
+            }
+            el.addEventListener('transitionend', onEnd) // 注意：可能会被调用多次，每个动画的执行，如位移+透明度，会调用两次;解决方案：在第一次调用后移除事件
           })
         },
       }

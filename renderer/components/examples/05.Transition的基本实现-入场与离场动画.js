@@ -1,4 +1,4 @@
-import { createRenderer, ref } from '../../../vue/index.js'
+import { createRenderer, Fragment, ref } from '../../../vue/index.js'
 import Transition from '../Transition.js'
 
 const { render } = createRenderer()
@@ -7,19 +7,29 @@ const App = {
   name: 'App',
   setup() {
     const show = ref(true)
-    function onLeave() {
-      show.value = false
+    function toggle() {
+      show.value = !show.value
     }
     return () => {
       return {
-        type: Transition,
-        children: {
-          default() {
-            return show.value
-              ? { type: 'h2', props: { class: 'box', onClick: onLeave }, children: '点我试试离场' }
-              : null
+        type: Fragment,
+        children: [
+          {
+            type: 'button',
+            children: 'toggle',
+            props: {
+              onClick: toggle,
+            },
           },
-        },
+          {
+            type: Transition,
+            children: {
+              default() {
+                return show.value && { type: 'h2', props: { class: 'box' }, children: 'Hello' }
+              },
+            },
+          },
+        ],
       }
     }
   },
