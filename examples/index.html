@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>phk-vue</title>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <script type="module">
+      import { createApp, h } from '../vue/index.js'
+
+      const App = {
+        data() {
+          return {
+            books: ['Vuejs设计与实现', '数据结构与算法', '算法设计', '大数据设计'],
+          }
+        },
+        setup() {
+          return (context) => {
+            return h(
+              'ul',
+              context.books.map((book) => h('li', book)),
+            )
+          }
+        },
+      }
+
+      createApp(App).mount('#app')
+    </script>
+  </body>
+</html>

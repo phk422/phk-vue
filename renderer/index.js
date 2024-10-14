@@ -1,7 +1,10 @@
 import { effect, queueJob, reactive, shallowReactive, shallowReadonly } from '../reactivity/index.js'
 import { hasPropsChanged, normalizeClass, resolveProps } from './utils.js'
+import { createVNode } from './vnode.js'
 
 export * from './apiAsyncComponent.js'
+
+export * from './vnode.js'
 
 // 片段
 export const Fragment = Symbol()
@@ -605,5 +608,16 @@ export function createRenderer(options = rendererOptions) {
       scheduler: queueJob,
     })
   }
-  return { render }
+
+  function createApp(rootComponent) {
+    const app = {
+      _component: rootComponent,
+      mount(rootContainer) {
+        const vnode = createVNode(rootComponent)
+        render(vnode, rootContainer)
+      },
+    }
+    return app
+  }
+  return { render, createApp }
 }
