@@ -65,9 +65,9 @@ function transformElement(node) {
     const args = [
       createStringLiteral(node.tag), // type类型
       // 如果节点有多个，需要创建数组表达式
-      node.children.length === 1 ? node.jsNode : createArrayExpression(node.children.map(c => c.jsNode)),
+      node.children.length === 1 ? node.children[0].jsNode : createArrayExpression(node.children.map(c => c.jsNode)),
     ]
-    const callExp = createCallExpression('h', createStringLiteral(node.tag, args))
+    const callExp = createCallExpression('h', args)
     node.jsNode = callExp
   }
 }
@@ -78,7 +78,7 @@ function transformRoot(node) {
     if (node.type !== 'Root')
       return
 
-    // 目前只简单处理只有一个根节点的情况
+    // 目前只简单处理讨论只有一个根节点的情况
     const vnodeJsAst = node.children[0].jsNode
 
     node.jsNode = {
