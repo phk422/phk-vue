@@ -22,9 +22,9 @@ export function transform(ast) {
     parent: null, // 当前正在转换的节点的父节点
     childIndex: null, // 当前正在转换的节点在父节点中的索引
     nodeTransforms: [ // 实现转换的解耦工作
-      transformElement,
       transformText,
-      transformA,
+      transformElement,
+      transformRoot,
     ],
     // 替换当前节点
     replaceNode(newNode) {
@@ -45,29 +45,53 @@ export function transform(ast) {
   return ast
 }
 
+// 处理文本节点
+function transformText(node) {
+  if (node.type !== 'Text')
+    return
+
+  // 文本节点就是字符串的字面量
+  node.jsNode = createStringLiteral(node.content)
+}
+
 // 将tag为p的node转换为h2
 function transformElement(node) {
-  if (node.type === 'Element' && node.tag === 'p') {
-    node.tag = 'h2'
-  }
-}
-
-// 重复Text类型的文本内容
-function transformText(node, context) {
-  if (node.type === 'Text') {
-    // 将Text转化为元素Element
-    context.replaceNode({
-      type: 'Element',
-      tag: 'span',
-    })
-    // node.content = node.content.repeat(2)
-  }
-}
-
-function transformA() {
-  console.log('transformA 进入了')
+  // 将元素的处理放在退出阶段，保证它的子节点都被处理了
   return () => {
-    console.log('transformA 退出了')
+    if (node.type !== 'Element')
+      return
+    // 创建h函数的调用
+    // h函数的 参数
+    const args = [
+      createStringLiteral(node.tag), // type类型
+      // 如果节点有多个，需要创建数组表达式
+      node.children.length === 1 ? node.jsNode : createArrayExpression(node.children.map(c => c.jsNode)),
+    ]
+    const callExp = createCallExpression('h', createStringLiteral(node.tag, args))
+    node.jsNode = callExp
+  }
+}
+
+// 处理根节点
+function transformRoot(node) {
+  return () => {
+    if (node.type !== 'Root')
+      return
+
+    // 目前只简单处理只有一个根节点的情况
+    const vnodeJsAst = node.children[0].jsNode
+
+    node.jsNode = {
+      type: 'FunctionDecl',
+      id: createIdentifier('render'),
+      params: [],
+      body: [
+        {
+          type: 'ReturnStatement',
+          return: vnodeJsAst,
+        },
+      ],
+    }
   }
 }
 
@@ -99,5 +123,39 @@ function traverseNode(ast, context) {
   let i = exitFns.length
   while (i--) {
     exitFns[i]()
+  }
+}
+
+// 用于创建字符串字面量
+function createStringLiteral(value) {
+  return {
+    type: 'StringLiteral',
+    value,
+  }
+}
+
+// 创建标识符
+function createIdentifier(name) {
+  return {
+    type: 'Identifier',
+    name,
+  }
+}
+
+// 创建数组表达式
+function createArrayExpression(elements) {
+  return {
+    type: 'ArrayExpression',
+    elements,
+  }
+}
+
+// 创建函数调用表达式
+// callee: 被调用函数的名称,即一个标志符，arguments：调用函数的参数
+function createCallExpression(callee, args) {
+  return {
+    type: 'CallExpression',
+    callee: createIdentifier(callee),
+    arguments: args,
   }
 }
