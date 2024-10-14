@@ -13,6 +13,7 @@ function isAlpha(char) {
   return (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'z')
 }
 
+// template -> tokens
 export default function tokenize(str) {
   let currentState = State.initial
   const tokens = []
