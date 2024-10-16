@@ -4,14 +4,14 @@ export function createVNode(type, props = null, children = null) {
   return {
     type,
     props,
-    children,
+    children: typeof children === 'number' ? String(children) : children,
   }
 }
 
 export function h(type, propsOrChildren, children) {
   const l = arguments.length
   if (l === 2) {
-    if (!Array.isArray(propsOrChildren) && typeof props === 'object') {
+    if (!Array.isArray(propsOrChildren) && typeof propsOrChildren === 'object') {
       return createVNode(type, propsOrChildren)
     }
     else {
